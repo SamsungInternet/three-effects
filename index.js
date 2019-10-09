@@ -1,5 +1,7 @@
 /* 
-* Copyright (c) 2016-2019, Yannis Gravezas Available under the MIT license.
+* Copyright (c) 2016-2018, Yannis Gravezas 
+* Copyright (c) 2019 Samsung Internet
+* Available under the MIT license.
 */
 
 var THREE = require('three');
@@ -7,12 +9,11 @@ window.THREE = THREE;
 
 window.attachEffects = module.exports = function (scene) {
     var renderTargets = [new THREE.WebGLRenderTarget(1, 1), new THREE.WebGLRenderTarget(1, 1)];
-    renderTargets[0].depthTexture = new THREE.DepthTexture();
-
+    renderTargets[0].depthTexture = renderTargets[1].depthTexture = new THREE.DepthTexture();
     renderTargets[0].depthTexture.type = THREE.UnsignedInt248Type;
 
     scene.userData.colorTexture = { value: null };
-    scene.userData.depthTexture = { value: null };
+    scene.userData.depthTexture = { value: renderTargets[0].depthTexture };
     
     var passes = [];
     var realTarget = null;

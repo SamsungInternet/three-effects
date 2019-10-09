@@ -55,9 +55,16 @@ Finally, the function call should return a function/closure that when run, it wi
             scene.removeEventListener("afterRender", generateTextures);
         }
     }
-
+    
+    // Attach bloom on scene
+    var cleanupFunction = effectModule(scene);
+    
+    // Attach effects in general. Notice that it can be done after we attach bloom
+    // but the effect will stay dormant as the "afterEvent" is not dispatched 
+    
     var attachEffects = require("three-effects");
 
+    // But it is dispatched from now on. Maybe in the future three will dispatch these by default
     var fx = attachEffects(scene);
 
     fx(`

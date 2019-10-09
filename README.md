@@ -56,15 +56,15 @@ Finally, the function call should return a function/closure that when run, it wi
         }
     }
     
-    // Attach bloom on scene
+    // Attach effect on the scene object
     var cleanupFunction = effectModule(scene);
     
-    // Attach effects in general. Notice that it can be done after we attach bloom
-    // but the effect will stay dormant as the "afterEvent" is not dispatched 
+    // Attach effects in general. Notice that it can be done after we attach the effect
+    // but the effect will stay dormant as the "afterRender" event is not yet dispatched 
     
     var attachEffects = require("three-effects");
 
-    // But it is dispatched from now on. Maybe in the future three will dispatch these by default
+    // But it will be dispatched from now on. Maybe in the future three will dispatch these by default
     var fx = attachEffects(scene);
 
     fx(`
@@ -77,7 +77,7 @@ Finally, the function call should return a function/closure that when run, it wi
 
             vec4 base_color = texture2D(colorTexture, vUv);
 
-            // Additively blend the effect texture with the base one, it could be bloom effect
+            // Additively blend the effect generated texture with the base one, it could be a bloom effect
             
             vec4 effect_color = texture2D(effect_texture, vUv);
             

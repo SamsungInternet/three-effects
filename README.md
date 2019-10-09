@@ -48,6 +48,12 @@ Finally, the function call should return a function/closure that when run, it wi
 
         // Attach listener so generateTextures run just after the scene is rendered
         scene.addEventListener("afterRender", generateTextures);
+        
+        // Return a function to perform cleanup if/when needed
+        return function () {
+            delete scene.userData["effect_texture"];
+            scene.removeEventListener("afterRender", generateTextures);
+        }
     }
 
     var attachEffects = require("three-effects");

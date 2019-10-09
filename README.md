@@ -4,7 +4,7 @@ A minimal post processing framework for three.js
 
 ## Usage
 
-The library exposes a single generator function that takes THREE.Scene objects as argument and returns functions/closures tied to the provided scene object. 
+The library exposes a single function that takes THREE.Scene objects as argument and returns functions/closures tied to the provided scene object. 
 
 The returned closures are used to set the final composition shader which will outputs to screen/hmd. The full fragment shader needs to be passed to the closure as it's single argument. The scene.userData property is used as the uniforms container for the final step.
 

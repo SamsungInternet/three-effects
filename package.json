@@ -1,0 +1,50 @@
+{
+  "name": "three-effects",
+  "version": "0.0.1",
+  "description": "Post processing for Threejs",
+  "main": "./index.js",
+  "scripts": {
+    "dist": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamsungInternet/three-effects.git"
+  },
+  "keywords": [
+    "webgl",
+    "grading",
+    "postprocessing",
+    "effect",
+    "bloom",
+    "outline",
+    "sobel",
+    "freichen",
+    "edge",
+    "colors",
+    "ssao",
+    "ambient",
+    "depth",
+    "occlusion",
+    "fxaa",
+    "antialiasing",
+    "godrays",
+    "sunshafts",
+    "three",
+    "threejs",
+    "uber",
+    "shader",
+    "grain",
+    "film"
+  ],
+  "author": "Yannis Gravezas <wizgrav@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SamsungInternet/three-effects/issues"
+  },
+  "homepage": "https://github.com/SamsungInternet/three-effects#readme",
+  "devDependencies": {
+    "three": "^0.109.0",
+    "webpack": "^4.41.0",
+    "webpack-cli": "^3.3.9"
+  }
+}

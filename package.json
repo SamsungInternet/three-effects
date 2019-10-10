@@ -1,10 +1,10 @@
 {
   "name": "three-effects",
-  "version": "0.0.1",
-  "description": "Post processing for Threejs",
+  "version": "0.1.0",
+  "description": "A minimal post processing framework for Threejs",
   "main": "./index.js",
   "scripts": {
-    "dist": "webpack"
+    "dist": "rollup -c"
   },
   "repository": {
     "type": "git",
@@ -43,8 +43,8 @@
   },
   "homepage": "https://github.com/SamsungInternet/three-effects#readme",
   "devDependencies": {
-    "three": "^0.109.0",
-    "webpack": "^4.41.0",
-    "webpack-cli": "^3.3.9"
+    "three": "SamsungInternet/three.js#39348a71b558445d2546ec88d2e3c51693716b8f",
+    "rollup": "^1.23.1",
+    "rollup-plugin-node-resolve": "^5.2.0"
   }
 }

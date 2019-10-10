@@ -4,14 +4,24 @@
 * Available under the MIT license.
 */
 
-var THREE = require('three');
-window.THREE = THREE;
+import * as THREE from 'three';
 
-window.attachEffects = module.exports = function (scene) {
+THREE.ShaderChunk["vr_pars"] = `
+
+    uniform float VR;
+
+    vec4 textureVR(in sampler2D tex, in vec2 uv) {
+        uv.x = VR ? (gl_FragCoord.x < VR ? min(0.5, uv.x) : max(0.5, uv.x) ): uv.x;
+        return texture2D(tex, uv);
+    }
+
+`;
+
+var attachEffects = function (scene) {
     var renderTargets = [new THREE.WebGLRenderTarget(1, 1), new THREE.WebGLRenderTarget(1, 1)];
     renderTargets[0].depthTexture = renderTargets[1].depthTexture = new THREE.DepthTexture();
-    renderTargets[0].depthTexture.type = THREE.UnsignedInt248Type;
-
+    
+    scene.userData.VR = { value: 0 };
     scene.userData.colorTexture = { value: null };
     scene.userData.depthTexture = { value: renderTargets[0].depthTexture };
     
@@ -41,19 +51,15 @@ window.attachEffects = module.exports = function (scene) {
     scene.onBeforeRender = function (renderer, scene, camera, renderTarget) {
         if (!passes.length) return;
 
-        if(renderTarget) {
-            vsize.set(renderTarget.width, renderTarget.height);
-        } else {
-            renderer.getDrawingBufferSize(vsize);
-        }
-    
-        beforeEvent.size = null;
-    
+        renderer.getDrawingBufferSize(vsize);
+        
         if(vsize.x !== renderTargets[0].width || vsize.y !== renderTargets[0].height) {
             renderTargets[0].setSize(vsize.x, vsize.y);
             renderTargets[1].setSize(vsize.x, vsize.y);
         }
 
+        scene.userData.VR.value = renderer.vr.enabled ? vsize.x : 0;
+    
         patchEvent(beforeEvent, renderer, scene, camera, renderTarget, renderTargets[0]);
         
         realTarget = renderTarget;
@@ -66,6 +72,8 @@ window.attachEffects = module.exports = function (scene) {
     scene.onAfterRender = function (renderer, scene, camera) {
         if (!passes.length) return;
 
+        renderer.vr.enabled = false;
+    
         patchEvent(afterEvent, renderer, scene, camera, realTarget, renderTargets[0]);
        
         var u = scene.userData;
@@ -81,6 +89,8 @@ window.attachEffects = module.exports = function (scene) {
             _quad.material = p;
             renderer.render(_scene, _ortho);
         });
+
+        renderer.vr.enabled = !!u.VR.value;
     };
 
     function parsePasses( src ) {
@@ -138,3 +148,5 @@ window.attachEffects = module.exports = function (scene) {
         });
     }
 }
+
+export { attachEffects, THREE }

@@ -4,7 +4,7 @@ A minimal post processing framework for three.js
 
 ## Usage
 
-The library exposes a single function that takes THREE.Scene objects as argument and returns functions/closures tied to the provided scene object. 
+The library exposes a single function, attachEffects, that takes THREE.Scene objects as argument and returns functions/closures tied to the provided scene object. 
 
 The returned closures are used to set the final composition shader which will outputs to screen/hmd. The full fragment shader needs to be passed to the closure as it's single argument. The scene.userData property is used as the uniforms container for the final step.
 
@@ -26,16 +26,19 @@ Finally, the function call should return a function/closure that when run, it wi
 
 ```js
 
+    import { attachEffects } from "three-effects";
+
     var effectModule = function(scene) {
         
         var textureUniform = { value: ... };
         
+        // Setup the uniforms to communicate with the final composition step
         scene.userData["effect_texture"] = textureUniform;
 
         function generateTextures (ev) {
             
             /* ev === { 
-                type: "afterRender", 
+                type: "afterRender" || "beforeRender", 
                 renderer, 
                 scene,
                 camera, 
@@ -46,7 +49,7 @@ Finally, the function call should return a function/closure that when run, it wi
             textureUniform.value = someGeneratedTexture;
         }
 
-        // Attach listener so generateTextures run just after the scene is rendered
+        // Attach generateTextures on afterRender event to run it every frame after the scene is rendered(but before the final compositing step)
         scene.addEventListener("afterRender", generateTextures);
         
         // Return a function to perform cleanup if/when needed
@@ -56,17 +59,15 @@ Finally, the function call should return a function/closure that when run, it wi
         }
     }
     
-    // Attach effect on the scene object
-    var cleanupFunction = effectModule(scene);
-    
-    // Attach effects in general. Notice that it can be done after we attach the effect
-    // but the effect will stay dormant as the "afterRender" event is not yet dispatched 
-    
-    var attachEffects = require("three-effects");
-
-    // But it will be dispatched from now on. Maybe in the future three will dispatch these by default
+    // Attach effects core on the scene object and get controller function
     var fx = attachEffects(scene);
 
+    
+    // Attach our effect on the scene object. Keep reference of the cleanup function if needed
+    var cleanupFunction = effectModule(scene);
+    
+
+    // Set final shader through controller function, a null argument disables post proc
     fx(`
         uniform sampler2D effect_texture;
 

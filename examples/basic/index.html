@@ -30,10 +30,11 @@
 			This demo will not work.
 			</div>
 		</div>
-        <script src="./dist/three-effects.js"></script>
-        <script src="./controls.js"></script>
-        
-		<script type="module">
+	   
+	   <script type="module">
+
+			import { THREE, attachEffects } from "../../dist/three-effects.js";
+			import { WEBVR } from "../vr.js";
 
 		    var camera, scene, renderer, controls, fx;
 
@@ -42,27 +43,29 @@
 
 			function init() {
 
-				renderer = new THREE.WebGLRenderer( { canvas: document.querySelector( 'canvas' ) } );
+				var canvas = document.querySelector( 'canvas' );
 
-				if ( ! renderer.extensions.get( 'WEBGL_depth_texture' ) ) {
+				
+				if(window.location.hash === "#multiview") {
 
-					supportsExtension = false;
-					document.querySelector( '#error' ).style.display = 'block';
-					return;
+					var context = canvas.getContext( 'webgl2', { antialias: false } );
+
+					renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
+
+				} else {
+				
+					renderer = new THREE.WebGLRenderer( { canvas: canvas } );
 
 				}
 
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
+				renderer.vr.enabled = true;
 				//
 
 				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 50 );
 				camera.position.z = 4;
-
-				controls = new THREE.OrbitControls( camera, renderer.domElement );
-				controls.enableDamping = true;
-				controls.dampingFactor = 0.05;
 
 				
 				// Our scene
@@ -73,7 +76,43 @@
 				window.addEventListener( 'resize', onWindowResize, false );
 
 				setupEffects();
+
+				document.body.appendChild( WEBVR.createButton( renderer ) );
 				
+			}
+
+			var clickCount = 1;
+
+			function getEffectShader () {
+				clickCount++;
+				
+				/*
+				return `
+					void main(void) {
+						gl_FragColor = texture2D(colorTexture, vUv);//vec4(vUv, 0., 1.0);
+                    }
+                `;
+*/
+				return `
+					#define MODE_${clickCount % 3} 1
+                    uniform float time;
+					
+                    void main(void) {
+						vec4 col = texture2D(colorTexture, vUv);
+                        vec4 dep = texture2D(depthTexture, vUv);
+						float d = smoothstep(0.9, 1., dep.r);
+						
+						#if defined MODE_1
+							gl_FragColor.rgb = col.rgb;
+						#elif defined MODE_2
+							gl_FragColor.rgb = vec3(d);
+						#else
+							gl_FragColor.rgb = mix(col.rgb, vec3(0.), abs(sin(time * d * 2.)));
+						#endif
+
+						gl_FragColor.a = 1.0;
+                    }
+                `;
 			}
 
 			function setupEffects() {
@@ -83,18 +122,20 @@
                 scene.userData.time = { value: 0 };
                 
 				// Shader for the final compositing
-                fx(`
-                    uniform float time;
-					
-                    void main(void) {
-						vec4 col = texture2D(colorTexture, vUv);
-                        vec4 dep = texture2D(depthTexture, vUv);
-                        float d = smoothstep(0.9, 1., dep.r);
-                    	gl_FragColor.rgb = mix(col.rgb, vec3(0.), abs(sin(time * d * 2.)));
-                        gl_FragColor.a = 1.0;
-                    }
-                `);
+				var fn = function () {
+					fx(getEffectShader());
+				};
+
+				renderer.domElement.addEventListener("click", fn);
+
+				renderer.vr.getController(0).addEventListener("selectstart", fn);
+
+				renderer.vr.getController(1).addEventListener("selectstart", fn);
+
+				fn();
 			}
+
+			
 
 			function setupScene() {
 
@@ -150,16 +191,16 @@
 
 			}
 
-			function animate() {
-
-				
-				requestAnimationFrame( animate );
-
-                scene.userData.time.value = window.performance.now() / 1000;
+			function render () {
+				scene.userData.time.value = window.performance.now() / 1000;
                 
                 renderer.render( scene, camera );
 
-				controls.update(); // required because damping is enabled
+			}
+
+			function animate() {
+
+				renderer.setAnimationLoop( render );
 
 			}
 

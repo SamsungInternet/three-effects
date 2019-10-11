@@ -4,7 +4,9 @@ A minimal framework for three.js development. It eases the implemention of perfo
 
 ## Post Processing
 
-The library exposes the attachEffects function, which takes THREE.Scene objects as its argument and returns control functions tied to the provided scene object. 
+The library works by attaching listeners on the scene.onBeforeRender and onAfterRender and after that post processing happens automatically when renderer.render is called with the enchanced scene object.
+
+A single function, attachEffects, is exposed from the module that takes THREE.Scene objects as argument and returns functions/closures tied to the provided scene object. 
 
 Internally, attachEffects binds the scene.onBeforeRender and .onAfterRender callback handlers to swap render targets and perform post processing transparently.
 

@@ -178,13 +178,17 @@ var WEBVR = {
 
 			stylizeElement( button );
 
-			navigator.xr.supportsSession( 'immersive-vr' ).then( function ( ) {
+			navigator.xr.supportsSession( 'immersive-vr' ).then( function ( supported ) {
 
-				showEnterXR();
+				if ( supported ) {
 
-			}, function () {
+					showEnterXR();
 
-				showXRNotFound();
+				} else {
+
+					showXRNotFound();
+
+				}
 
 			} );
 

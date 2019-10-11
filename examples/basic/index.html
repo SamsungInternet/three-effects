@@ -77,6 +77,12 @@
 
 				setupEffects();
 
+				if ( typeof navigator !== 'undefined' && 'xr' in navigator ) {
+				 	if( !('isSessionSupported' in navigator.xr) ) {
+						alert("isSessionSupported is missing from navigator.xr\nThis browser doesn't support the latest WebXR spec");
+						return;
+					}
+				}
 				document.body.appendChild( WEBVR.createButton( renderer ) );
 				
 			}

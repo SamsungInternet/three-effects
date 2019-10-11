@@ -20,7 +20,9 @@ THREE.ShaderChunk["vr_pars"] = `
 var attachEffects = function (scene) {
     var renderTargets = [new THREE.WebGLRenderTarget(1, 1), new THREE.WebGLRenderTarget(1, 1)];
     renderTargets[0].depthTexture = renderTargets[1].depthTexture = new THREE.DepthTexture();
-    
+    renderTargets[0].depthTexture.format = THREE.DepthStencilFormat;
+    renderTargets[0].depthTexture.type = THREE.UnsignedInt248Type;
+
     scene.userData.VR = { value: 0 };
     scene.userData.colorTexture = { value: null };
     scene.userData.depthTexture = { value: renderTargets[0].depthTexture };

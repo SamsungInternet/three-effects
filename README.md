@@ -4,7 +4,7 @@ A minimal post processing framework for three.js
 
 ## Usage
 
-The library exposes a single function, attachEffects, that takes THREE.Scene objects as argument and returns functions/closures tied to the provided scene object. 
+The library exposes a single function, attachEffects, that takes THREE.Scene objects as argument and returns functions/closures tied to the provided scene object. The scene.onBeforeRender and onAfterRender properties are utilized to swap renderTargets internally in renderer.render so the post processing becomes automatic, just need to "wire" a scene with attachEffects and then use it normally in renderer.render().
 
 The returned closures are used to set the final composition shader which will outputs to screen/hmd. The full fragment shader needs to be passed to the closure as it's single argument. The scene.userData property is used as the uniforms container for the final step.
 

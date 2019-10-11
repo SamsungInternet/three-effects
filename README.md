@@ -22,6 +22,7 @@ To deal with this, some simple shader preprocessor logic to split the shader int
 
 
 ```cpp
+
 void main(void) {
 
     #if defined FX_PASS_1
@@ -31,6 +32,7 @@ void main(void) {
     #endif
 
 }
+
 ```
 
 Defines like FX_PASS_N will be detected resulting in the generation of several shaders/passes. The colorTexture uniform will always be the result of the previous pass.
@@ -139,12 +141,13 @@ Passing arguments on the control functions can be used for effect state updates.
 
     // This is just a convention but having effects return a control function to configure/cleanup effects is recommended 
     controlFunction(null);
+
 ```
 ## Builtin Effects
 
 The library exposes some builtin effects throught an "attach" map of functions using the format described above. Currently bloom, filmgrain, fxaa, glitch are provided
 
-```
+```js
     
     import {attachEffects, attach} from "three-effects"
 

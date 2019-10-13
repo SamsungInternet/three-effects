@@ -49757,14 +49757,14 @@ function index (scene, config) {
         uniform float radius;
         
         float lerpBloomFactor(const in float factor) {
-            float mirrorFactor = 1.3 - factor;
+            float mirrorFactor = 1.25 - factor;
             return mix(factor, mirrorFactor, radius);
         }
 
         void main() {
-            gl_FragColor = strength * ( lerpBloomFactor(0.9) *  texture2D(blurTexture1, vUv) + \
-                                            lerpBloomFactor(0.6) *  texture2D(blurTexture2, vUv) + \
-                                            lerpBloomFactor(0.3) *  texture2D(blurTexture3, vUv) );\
+            gl_FragColor = strength * ( lerpBloomFactor(1.) *  texture2D(blurTexture1, vUv) + \
+                                            lerpBloomFactor(0.5) *  texture2D(blurTexture2, vUv) + \
+                                            lerpBloomFactor(0.25) *  texture2D(blurTexture3, vUv) );\
         }
     `, postUniforms);
 

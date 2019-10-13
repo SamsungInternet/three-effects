@@ -1,6 +1,6 @@
 # three-effects
 
-A minimal framework for three.js development. It provides mechanisms for setting up post processing and entity component systems
+A minimal framework for three.js development. It provides post processing and entity component systems
 
 ## Post Processing
 

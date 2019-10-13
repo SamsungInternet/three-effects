@@ -33,9 +33,8 @@
 	   
 	   <script type="module">
 
-			import { THREE, attachEffects, effectLib } from "../../dist/three-effects.js";
-			//import { WEBVR } from "../../../node_modules/three/examples/jsm/vr/WebVR.js";
-			import { WEBVR } from "../WebVR.js";
+			import { THREE, attachEffects } from "../../dist/three-effects.js";
+			import { WEBVR } from "./WebVR.js";
 
 		    var camera, scene, renderer, controls, fx;
 
@@ -46,7 +45,6 @@
 
 				var canvas = document.querySelector( 'canvas' );
 
-				
 				if(window.location.hash === "#multiview") {
 
 					var context = canvas.getContext( 'webgl2', { antialias: false, xrCompatible: true } );
@@ -54,11 +52,12 @@
 					renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
 
 				} else {
-				
+
 					renderer = new THREE.WebGLRenderer( { canvas: canvas } );
 
 				}
 
+				
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -80,7 +79,7 @@
 
 				if ( typeof navigator !== 'undefined' && 'xr' in navigator ) {
 				 	if( !('isSessionSupported' in navigator.xr) ) {
-						alert("isSessionSupported is missing from navigator.xr\nThis browser doesn't support the latest WebXR spec");
+						alert("isSessionSupported is missing from navigator.xr\n");
 					}
 				}
 				document.body.appendChild( WEBVR.createButton( renderer ) );
@@ -91,7 +90,7 @@
 
 			function getEffectShader () {
 				clickCount++;
-				
+				//return null;
 				/*
 				return `
 					void main(void) {
@@ -100,34 +99,20 @@
                 `;
 */
 				return `
-					#include <bloom_pars>
-					
 					#define MODE_${clickCount % 3} 1
-					
-					uniform float time;
+                    uniform float time;
 					
                     void main(void) {
 						vec4 col = texture2D(colorTexture, vUv);
                         vec4 dep = texture2D(depthTexture, vUv);
 						float d = smoothstep(0.9, 1., dep.r);
-	
-						#if defined FX_PASS_0
-							#if defined MODE_1
-								gl_FragColor.rgb = col.rgb;
-							#elif defined MODE_2
-								gl_FragColor.rgb = vec3(d);
-							#else
-								gl_FragColor.rgb = mix(col.rgb, vec3(0.), abs(sin(time * d * 2.)));
-							#endif
+						
+						#if defined MODE_1
+							gl_FragColor.rgb = col.rgb;
+						#elif defined MODE_2
+							gl_FragColor.rgb = vec3(d);
 						#else
-							//col = vec4(0.);
-							#if defined MODE_2
-								col.rgb = vec3(d);
-							#else
-								bloom_apply(col, vUv);
-							#endif
-								
-							gl_FragColor = col;
+							gl_FragColor.rgb = mix(col.rgb, vec3(0.), abs(sin(time * d * 2.)));
 						#endif
 
 						gl_FragColor.a = 1.0;
@@ -138,9 +123,6 @@
 			function setupEffects() {
 				
 				fx = attachEffects(scene);
-
-				// oneliners ftw
-				(effectLib.bloom(scene, { passId: "FX_PASS_0" }))({ strength: 1, radius: 1, threshold: 0.1 });
 
                 scene.userData.time = { value: 0 };
                 

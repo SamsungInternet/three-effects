@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/SamsungInternet/three-effects#readme",
   "devDependencies": {
-    "three": "SamsungInternet/three.js#fix_multiview_postproc",
+    "three": "^0.109.0",
     "rollup": "^1.23.1",
     "rollup-plugin-node-resolve": "^5.2.0"
   }

@@ -1,10 +1,23 @@
+import * as THREE from "three";
+
+THREE.ShaderChunk["bloom_pars"] = `
+    uniform sampler2D bloom_texture;
+
+    void bloom_apply(inout vec4 fragColor, in vec2 uv) {
+        fragColor += texture2D(bloom_texture, uv);
+    }
+`;
+
 export default function (scene, config) {
 
     config = config || {};
 
+    var inp = new THREE.WebGLRenderTarget(1,1);
     var ping = [ new THREE.WebGLRenderTarget(1,1), new THREE.WebGLRenderTarget(1,1), new THREE.WebGLRenderTarget(1,1) ];
     var pong = [ new THREE.WebGLRenderTarget(1,1), new THREE.WebGLRenderTarget(1,1), new THREE.WebGLRenderTarget(1,1) ];
     
+    var passId = config.passId;
+
     function getPass(src, uniforms) {
         return new THREE.ShaderMaterial({
             uniforms: uniforms,
@@ -18,38 +31,31 @@ export default function (scene, config) {
             `,
             fragmentShader: "varying vec2 vUv;\n" + src,
             depthWrite: false,
-            depthTest: false,
-            extensions: {
-                derivatives: true,
-                shaderTextureLOD: true
-            },
-            fog: false,
-            lights: false
+            depthTest: false
         });
     }
 
+    var controlUniforms = {};
+
     var preUniforms = config.inputUniforms || {
         colorTexture: { value: null },
+        depthTexture: { value: null },
         threshold: { value: config.threshold || 0.9 },
         smooth: { value: config.smooth || 0.01 }
     }
 
     var prePass = getPass(config.inputShader || `
         uniform sampler2D colorTexture;
+        uniform sampler2D depthTexture;
+        uniform float threshold;
 
         void main(void) {
             vec4 texel = texture2D( colorTexture, vUv );
-
 			vec3 luma = vec3( 0.299, 0.587, 0.114 );
-
 			float v = dot( texel.xyz, luma );
-
 			vec4 outputColor = vec4( 0., 0., 0., 1. );
-
-			float alpha = smoothstep( threshold, threshold + smooth, v );
-
+			float alpha = smoothstep( threshold, threshold + 0.01, v );
 			gl_FragColor = mix( outputColor, texel, alpha );
-
         }
     `, preUniforms);
     
@@ -120,18 +126,18 @@ export default function (scene, config) {
     ];
 
     var postUniforms = {
-        strength: { value: 0 },
-        radius: { value: 0 },
-        blurTexture1: { value: pong[0] },
-        blurTexture2: { value: pong[1] },
-        blurTexture3: { value: pong[2] },
+        strength: { value: 0.5 },
+        radius: { value: 1 },
+        blurTexture1: { value: pong[0].texture },
+        blurTexture2: { value: pong[1].texture },
+        blurTexture3: { value: pong[2].texture },
         colorTexture: { value: null }
 	};
 
-    scene.userData.bloom_strength = postUniforms.strength;
-    scene.userData.bloom_radius = postUniforms.radius;
-    if (preUniforms.threshold) scene.userData.bloom_threshold = preUniforms.threshold;
-    scene.userData.bloom_texture = { value: pong[0].texture };
+    controlUniforms.strength = scene.userData.bloom_strength = postUniforms.strength;
+    controlUniforms.radius = scene.userData.bloom_radius = postUniforms.radius;
+    if (preUniforms.threshold) controlUniforms.threshold = scene.userData.bloom_threshold = preUniforms.threshold;
+    scene.userData.bloom_texture = { value: ping[0].texture };
 
     var postPass = getPass(`
         uniform sampler2D blurTexture1;
@@ -141,59 +147,99 @@ export default function (scene, config) {
         uniform float radius;
         
         float lerpBloomFactor(const in float factor) {
-            float mirrorFactor = 1.2 - factor;
+            float mirrorFactor = 1.3 - factor;
             return mix(factor, mirrorFactor, radius);
         }
 
         void main() {
-            gl_FragColor = strength * ( lerpBloomFactor(1.) *  texture2D(blurTexture1, vUv) + \
-                                            lerpBloomFactor(0.66) *  texture2D(blurTexture2, vUv) + \
-                                            lerpBloomFactor(0.33) *  texture2D(blurTexture3, vUv) );\
+            gl_FragColor = strength * ( lerpBloomFactor(0.9) *  texture2D(blurTexture1, vUv) + \
+                                            lerpBloomFactor(0.6) *  texture2D(blurTexture2, vUv) + \
+                                            lerpBloomFactor(0.3) *  texture2D(blurTexture3, vUv) );\
         }
     `, postUniforms);
 
+    scene.userData.bloom_internal = {prePass, blurPasses, postPass};
+
+    var _scene = new THREE.Scene();
+    var _ortho = new THREE.OrthographicCamera(1,1,1,1,1,10);
+    var _quad = new THREE.Mesh(new THREE.PlaneBufferGeometry(2,2), null);
+    _quad.frustumCulled = false;
+    _scene.add(_quad);
+
+    function performPass(renderer, m, inputTarget, outputTarget) {
+        _quad.material = m;
+        if (m.uniforms.colorTexture)
+            m.uniforms.colorTexture.value = inputTarget ? inputTarget.texture : null;
+        if (m.uniforms.depthTexture)
+            m.uniforms.depthTexture.value = inputTarget ? inputTarget.depthTexture: null;
+        if (m.uniforms.resolution) 
+            m.uniforms.resolution.value.set(inputTarget.width, inputTarget.height);
+        renderer.setRenderTarget(outputTarget);
+        renderer.render(_scene, _ortho);
+    }
+
     var fn = function (e) {
-        var rt = e.renderTarget;
+        if(passId !== e.passId) return;
         
-        blurUniforms.VR = scene.userData.VR;
+        blurUniforms.VR = { value: 0 };
+        
+        performPass(e.renderer, prePass, e.renderTarget, inp);
 
-        performPass(prePass, e.renderTarget, ping[0]);
-
+        blurUniforms.VR.value = e.scene.userData.VR.value * 0.25;
+        
         for(var i=0; i< 3; i++) {
-            blurUniforms.resolution.value.set(w, h);
-            
             blurUniforms.direction.value.set(0, 1);
-            performPass(blurPasses[i], i ? ping[i - 1] : ping[0], pong[ i]);
+            performPass(e.renderer, blurPasses[i], i ? pong[i - 1] : inp, ping[i]);
             
             blurUniforms.direction.value.set(1, 0);
-            performPass(blurPasses[i], pong[i], ping[i]);
-            
-            w *= 0.5;
-            h *= 0.5;
+            performPass(e.renderer, blurPasses[i], ping[i], pong[i]);
+            blurUniforms.VR.value *= 0.5;
         }
 
-        performPass(postPass, ping[i], pong[0]);
-
+        performPass(e.renderer, postPass, false, ping[0]);
     };
 
-    scene.addEventListener("afterRender", fn);
+    scene.addEventListener("afterPass", fn);
 
-    return function () {
-        
-        scene.removeEventListener("afterRender", fn);
-        
-        for(var i=0; i<3; i++) {
-            ping[i].dispose();
-            pong[i].dispose();
-            blurPasses[i].dispose();
+    var fr = function (e) {
+        var w = e.size.x * 0.5, h = e.size.y * 0.5;
+        inp.setSize(w, h);
+        for(var i=0; i< 3; i++) {
+            w = Math.floor(w * 0.5);
+            h = Math.floor(h * 0.5);
+            ping[i].setSize(w, h);
+            pong[i].setSize(w, h);
         }
+    }
 
-        prePass.dispose();
-        postPass.dispose();
+    scene.addEventListener("resizeEffects", fr);
 
-        delete scene.userData.bloom_strength;
-        delete scene.userData.bloom_radius;
-        delete scene.userData.bloom_threshold;
-        
+    return function (arg) {
+        if ( arg ) {
+            for ( var k in arg) {
+                if (controlUniforms[k]) {
+                    controlUniforms[k].value = arg[k];
+                }
+            }
+        } else {
+            scene.removeEventListener("afterPass", fn);
+            scene.removeEventListener("afterEffects", fr);
+            
+            inp.dispose();
+            for(var i = 0; i < 3; i++) {
+                ping[i].dispose();
+                pong[i].dispose();
+                blurPasses[i].dispose();
+            }
+
+            prePass.dispose();
+            postPass.dispose();
+
+            delete scene.userData.bloom_internal;
+            delete scene.userData.bloom_strength;
+            delete scene.userData.bloom_radius;
+            delete scene.userData.bloom_threshold;
+            delete scene.userData.bloom_texture;
+        }
     }
 }

@@ -223,7 +223,7 @@ export default function (scene, config) {
             }
         } else {
             scene.removeEventListener("afterPass", fn);
-            scene.removeEventListener("afterEffects", fr);
+            scene.removeEventListener("resizeEffects", fr);
             
             inp.dispose();
             for(var i = 0; i < 3; i++) {

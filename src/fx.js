@@ -37,9 +37,13 @@ export default function (scene) {
     depthTexture.format = THREE.DepthStencilFormat;
     depthTexture.type = THREE.UnsignedInt248Type;
 
+    window.depthTexture = depthTexture;
+
+    renderTargets[0].depthTexture = depthTexture;
+    
     scene.userData.VR = { value: 0 };
     scene.userData.colorTexture = { value: null };
-    scene.userData.depthTexture = { value: renderTargets[0].depthTexture };
+    scene.userData.depthTexture = { value: depthTexture };
     
     var passes = [];
     
@@ -53,6 +57,8 @@ export default function (scene) {
 
     var vsize = new THREE.Vector2();
 
+    scene.userData.resolution = { value: vsize };
+
     var event = { type: "beforeRender", scene: null, renderer: null, camera: null, size: vsize };
     
     function dispatch(type) {
@@ -63,10 +69,7 @@ export default function (scene) {
     scene.onBeforeRender = function (renderer, scene, camera, renderTarget) {
         if (!passes.length) return;
 
-        if (camera.isArrayCamera) {
-            var cv = camera.cameras[0].viewport;
-            vsize.set(2 * cv.z, cv.w);
-        } else if (renderTarget) {
+        if (renderTarget) {
             vsize.set(renderTarget.width, renderTarget.height);
         } else {
             renderer.getDrawingBufferSize(vsize);
@@ -75,6 +78,7 @@ export default function (scene) {
         if(vsize.x !== renderTargets[0].width || vsize.y !== renderTargets[0].height) {
             renderTargets[0].setSize(vsize.x, vsize.y);
             renderTargets[1].setSize(vsize.x, vsize.y);
+            
             dispatch("resizeEffects");
         }
 
@@ -86,7 +90,7 @@ export default function (scene) {
         realTarget = event.outputTarget = renderTarget;
         event.renderTarget = renderTargets[0];
         dispatch("beforeRender");
-        renderTargets[0].depthTexture = depthTexture;
+
         renderer.setRenderTarget(renderTargets[0]);
     };
 
@@ -99,11 +103,7 @@ export default function (scene) {
         var u = scene.userData;
     
         u.colorTexture.value = renderTargets[0].texture;
-        u.depthTexture.value = renderTargets[0].depthTexture;
-        renderTargets[0].depthTexture = null;
-
-        //renderer.setViewport(0, 0, vsize.x, vsize.y);
-
+       
         dispatch("afterRender");
             
         passes.forEach(function (p, i) {
@@ -114,7 +114,7 @@ export default function (scene) {
         
             _quad.material = p;
             renderer.setRenderTarget(rt);
-            renderer.setViewport(0, 0, vsize.x, vsize.y);
+            //renderer.setViewport(0, 0, vsize.x, vsize.y);
             renderer.render(_scene, _ortho);
         
             u.colorTexture.value = rt ? rt.texture : null;
@@ -184,6 +184,7 @@ export default function (scene) {
         src = [
             "uniform sampler2D colorTexture;",
             "uniform sampler2D depthTexture;",
+            "uniform vec2 resolution;",
             "varying vec2 vUv;",
             src
         ].join("\n");

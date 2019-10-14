@@ -111,10 +111,7 @@
 								gl_FragColor.rgb = mix(col.rgb, vec3(0.), abs(sin(time * d * 2.)));
 							#endif
 						#else
-							//col = vec4(0.);
-							#if defined MODE_2
-								col.rgb = vec3(d);
-							#else
+							#ifndef MODE_2
 								bloom_apply(col, vUv);
 							#endif
 								
@@ -131,7 +128,7 @@
 				fx = attachEffects(scene);
 
 				// oneliners ftw
-				(effectLib.bloom(scene, { passId: "FX_PASS_0" }))({ strength: 1, radius: 1., threshold: 0.2 });
+				(effectLib.bloom(scene, { passId: "FX_PASS_0" }))({ strength: 1, radius: 0.8, threshold: 0.1 });
 
                 scene.userData.time = { value: 0 };
                 

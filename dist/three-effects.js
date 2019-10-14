@@ -49898,9 +49898,13 @@ function fx (scene) {
     depthTexture.format = DepthStencilFormat;
     depthTexture.type = UnsignedInt248Type;
 
+    window.depthTexture = depthTexture;
+
+    renderTargets[0].depthTexture = depthTexture;
+    
     scene.userData.VR = { value: 0 };
     scene.userData.colorTexture = { value: null };
-    scene.userData.depthTexture = { value: renderTargets[0].depthTexture };
+    scene.userData.depthTexture = { value: depthTexture };
     
     var passes = [];
     
@@ -49924,10 +49928,7 @@ function fx (scene) {
     scene.onBeforeRender = function (renderer, scene, camera, renderTarget) {
         if (!passes.length) return;
 
-        if (camera.isArrayCamera) {
-            var cv = camera.cameras[0].viewport;
-            vsize.set(2 * cv.z, cv.w);
-        } else if (renderTarget) {
+        if (renderTarget) {
             vsize.set(renderTarget.width, renderTarget.height);
         } else {
             renderer.getDrawingBufferSize(vsize);
@@ -49936,6 +49937,7 @@ function fx (scene) {
         if(vsize.x !== renderTargets[0].width || vsize.y !== renderTargets[0].height) {
             renderTargets[0].setSize(vsize.x, vsize.y);
             renderTargets[1].setSize(vsize.x, vsize.y);
+            
             dispatch("resizeEffects");
         }
 
@@ -49947,7 +49949,7 @@ function fx (scene) {
         realTarget = event.outputTarget = renderTarget;
         event.renderTarget = renderTargets[0];
         dispatch("beforeRender");
-        renderTargets[0].depthTexture = depthTexture;
+
         renderer.setRenderTarget(renderTargets[0]);
     };
 
@@ -49960,11 +49962,7 @@ function fx (scene) {
         var u = scene.userData;
     
         u.colorTexture.value = renderTargets[0].texture;
-        u.depthTexture.value = renderTargets[0].depthTexture;
-        renderTargets[0].depthTexture = null;
-
-        //renderer.setViewport(0, 0, vsize.x, vsize.y);
-
+       
         dispatch("afterRender");
             
         passes.forEach(function (p, i) {
@@ -49975,7 +49973,7 @@ function fx (scene) {
         
             _quad.material = p;
             renderer.setRenderTarget(rt);
-            renderer.setViewport(0, 0, vsize.x, vsize.y);
+            //renderer.setViewport(0, 0, vsize.x, vsize.y);
             renderer.render(_scene, _ortho);
         
             u.colorTexture.value = rt ? rt.texture : null;

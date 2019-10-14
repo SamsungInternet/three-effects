@@ -4,7 +4,6 @@
 		<title>three.js effects</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<link type="text/css" rel="stylesheet" href="main.css">
 		<style>
 			#error {
 				margin: auto;
@@ -14,6 +13,13 @@
 				padding: 20px;
 				background: #CE0808;
 			}
+			canvas {
+				position: fixed;
+				top: 0;
+				left:0;
+				width: 100vw;
+				height: 100vh;
+			}
 		</style>
 
 		
@@ -21,16 +27,6 @@
 	</head>
 	<body>
 		<canvas></canvas>
-		<div id="info">
-			<a href="http://threejs.org" target="_blank" rel="noopener">threejs</a> effects<br/>
-			Created by <a href="http://github.com/wizgrav" target="_blank" rel="noopener">wizgrav</a>.
-
-			<div id="error" style="display: none;">
-			Your browser does not support <strong>WEBGL_depth_texture</strong>.<br/><br/>
-			This demo will not work.
-			</div>
-		</div>
-	   
 	   <script type="module">
 
 			import { THREE, attachEffects, effectLib } from "../../dist/three-effects.js";
@@ -78,11 +74,6 @@
 
 				setupEffects();
 
-				if ( typeof navigator !== 'undefined' && 'xr' in navigator ) {
-				 	if( !('isSessionSupported' in navigator.xr) ) {
-						alert("isSessionSupported is missing from navigator.xr\nThis browser doesn't support the latest WebXR spec");
-					}
-				}
 				document.body.appendChild( WEBVR.createButton( renderer ) );
 				
 			}
@@ -140,7 +131,7 @@
 				fx = attachEffects(scene);
 
 				// oneliners ftw
-				(effectLib.bloom(scene, { passId: "FX_PASS_0" }))({ strength: 1, radius: 1, threshold: 0.1 });
+				(effectLib.bloom(scene, { passId: "FX_PASS_0" }))({ strength: 1, radius: 1., threshold: 0.2 });
 
                 scene.userData.time = { value: 0 };
                 

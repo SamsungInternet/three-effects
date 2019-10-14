@@ -4,15 +4,13 @@
 		<title>three.js effects</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<link type="text/css" rel="stylesheet" href="main.css">
 		<style>
-			#error {
-				margin: auto;
-				margin-top: 40px;
-				display: block;
-				max-width: 400px;
-				padding: 20px;
-				background: #CE0808;
+			canvas {
+				position: fixed;
+				top: 0;
+				left:0;
+				width: 100vw;
+				height: 100vh;
 			}
 		</style>
 
@@ -21,20 +19,11 @@
 	</head>
 	<body>
 		<canvas></canvas>
-		<div id="info">
-			<a href="http://threejs.org" target="_blank" rel="noopener">threejs</a> effects<br/>
-			Created by <a href="http://github.com/wizgrav" target="_blank" rel="noopener">wizgrav</a>.
+		<script type="module">
 
-			<div id="error" style="display: none;">
-			Your browser does not support <strong>WEBGL_depth_texture</strong>.<br/><br/>
-			This demo will not work.
-			</div>
-		</div>
-	   
-	   <script type="module">
-
-			import { THREE, attachEffects } from "../../dist/three-effects.js";
-			import { WEBVR } from "./WebVR.js";
+			import { THREE, attachEffects, effectLib } from "./three-effects.js";
+			//import { WEBVR } from "../../../node_modules/three/examples/jsm/vr/WebVR.js";
+			import { WEBVR } from "../WebVR.js";
 
 		    var camera, scene, renderer, controls, fx;
 
@@ -45,19 +34,12 @@
 
 				var canvas = document.querySelector( 'canvas' );
 
-				if(window.location.hash === "#multiview") {
-
-					var context = canvas.getContext( 'webgl2', { antialias: false, xrCompatible: true } );
-
-					renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
-
-				} else {
-
-					renderer = new THREE.WebGLRenderer( { canvas: canvas } );
-
-				}
-
 				
+				var context = canvas.getContext( 'webgl2', { antialias: false, xrCompatible: true } );
+
+				renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
+				
+
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
@@ -77,11 +59,6 @@
 
 				setupEffects();
 
-				if ( typeof navigator !== 'undefined' && 'xr' in navigator ) {
-				 	if( !('isSessionSupported' in navigator.xr) ) {
-						alert("isSessionSupported is missing from navigator.xr\n");
-					}
-				}
 				document.body.appendChild( WEBVR.createButton( renderer ) );
 				
 			}
@@ -90,7 +67,7 @@
 
 			function getEffectShader () {
 				clickCount++;
-				//return null;
+				
 				/*
 				return `
 					void main(void) {
@@ -99,20 +76,34 @@
                 `;
 */
 				return `
+					#include <bloom_pars>
+					
 					#define MODE_${clickCount % 3} 1
-                    uniform float time;
+					
+					uniform float time;
 					
                     void main(void) {
 						vec4 col = texture2D(colorTexture, vUv);
                         vec4 dep = texture2D(depthTexture, vUv);
 						float d = smoothstep(0.9, 1., dep.r);
-						
-						#if defined MODE_1
-							gl_FragColor.rgb = col.rgb;
-						#elif defined MODE_2
-							gl_FragColor.rgb = vec3(d);
+	
+						#if defined FX_PASS_0
+							#if defined MODE_1
+								gl_FragColor.rgb = col.rgb;
+							#elif defined MODE_2
+								gl_FragColor.rgb = vec3(d);
+							#else
+								gl_FragColor.rgb = mix(col.rgb, vec3(0.), abs(sin(time * d * 2.)));
+							#endif
 						#else
-							gl_FragColor.rgb = mix(col.rgb, vec3(0.), abs(sin(time * d * 2.)));
+							//col = vec4(0.);
+							#if defined MODE_2
+								col.rgb = vec3(d);
+							#else
+								bloom_apply(col, vUv);
+							#endif
+								
+							gl_FragColor = col;
 						#endif
 
 						gl_FragColor.a = 1.0;
@@ -123,6 +114,9 @@
 			function setupEffects() {
 				
 				fx = attachEffects(scene);
+
+				// oneliners ftw
+				(effectLib.bloom(scene, { passId: "FX_PASS_0" }))({ strength: 1, radius: 1., threshold: 0.2 });
 
                 scene.userData.time = { value: 0 };
                 

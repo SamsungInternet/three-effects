@@ -6,7 +6,7 @@ export default function (renderer, scene, camera, assets) {
     var material = new THREE.MeshPhysicalMaterial({
         metalness: 0,
         roughness: 1,
-        aoMapIntensity: 0.1,
+        aoMapIntensity: 0.2,
         map: assets["venus_diffuse"],
         aoMap: assets["venus_material"],
         roughnessMap: assets["venus_material"],
@@ -26,7 +26,7 @@ export default function (renderer, scene, camera, assets) {
         m.castShadow = true;
         m.receiveShadow = true;
         
-        m.material.color.setHSL(i/arr.length, 0.2, 0.6);
+        m.material.color.setHSL(i/arr.length, 0.8, 0.66);
         var a = Math.PI * 2 * (i / arr.length);
         m.position.set(Math.sin(a) * 5, 0, Math.cos(a) * 5);
         var r =  (0.4 + i / arr.length);

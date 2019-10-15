@@ -49664,7 +49664,8 @@ function index (scene, config) {
 			vec3 luma = vec3( 0.299, 0.587, 0.114 );
 			float v = dot( texel.xyz, luma );
 			vec4 outputColor = vec4( 0., 0., 0., 1. );
-			float alpha = smoothstep( threshold, threshold + 0.01, v );
+            float alpha = smoothstep( threshold, threshold + 0.01, v );
+            
 			gl_FragColor = mix( outputColor, texel, alpha );
         }
     `, preUniforms);
@@ -49756,15 +49757,14 @@ function index (scene, config) {
         uniform float strength;
         uniform float radius;
         
-        float lerpBloomFactor(const in float factor) {
-            float mirrorFactor = 1.25 - factor;
+        float lerpBloomFactor(const in float factor, const in float mirrorFactor) {
             return mix(factor, mirrorFactor, radius);
         }
 
         void main() {
-            gl_FragColor = strength * ( lerpBloomFactor(1.) *  texture2D(blurTexture1, vUv) + \
-                                            lerpBloomFactor(0.5) *  texture2D(blurTexture2, vUv) + \
-                                            lerpBloomFactor(0.25) *  texture2D(blurTexture3, vUv) );\
+            gl_FragColor = strength * ( lerpBloomFactor(1., 0.25) *  texture2D(blurTexture1, vUv) + \
+                                            lerpBloomFactor(0.25, 0.75) *  texture2D(blurTexture2, vUv) + \
+                                            lerpBloomFactor(0.25, 1.) *  texture2D(blurTexture3, vUv) );\
         }
     `, postUniforms);
 
@@ -49833,7 +49833,7 @@ function index (scene, config) {
             }
         } else {
             scene.removeEventListener("afterPass", fn);
-            scene.removeEventListener("afterEffects", fr);
+            scene.removeEventListener("resizeEffects", fr);
             
             inp.dispose();
             for(var i = 0; i < 3; i++) {
@@ -49854,7 +49854,7 @@ function index (scene, config) {
     }
 }
 
-
+//export { bloom, fxaa, filmgrain, colors, glitch }
 
 var index$1 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
@@ -49917,6 +49917,8 @@ function fx (scene) {
     _scene.add(_quad);
 
     var vsize = new Vector2();
+
+    scene.userData.resolution = { value: vsize };
 
     var event = { type: "beforeRender", scene: null, renderer: null, camera: null, size: vsize };
     
@@ -50043,6 +50045,7 @@ function fx (scene) {
         src = [
             "uniform sampler2D colorTexture;",
             "uniform sampler2D depthTexture;",
+            "uniform vec2 resolution;",
             "varying vec2 vUv;",
             src
         ].join("\n");

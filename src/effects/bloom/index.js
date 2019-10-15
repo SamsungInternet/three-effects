@@ -147,15 +147,14 @@ export default function (scene, config) {
         uniform float strength;
         uniform float radius;
         
-        float lerpBloomFactor(const in float factor) {
-            float mirrorFactor = 1.25 - factor;
+        float lerpBloomFactor(const in float factor, const in float mirrorFactor) {
             return mix(factor, mirrorFactor, radius);
         }
 
         void main() {
-            gl_FragColor = strength * ( lerpBloomFactor(1.) *  texture2D(blurTexture1, vUv) + \
-                                            lerpBloomFactor(0.5) *  texture2D(blurTexture2, vUv) + \
-                                            lerpBloomFactor(0.25) *  texture2D(blurTexture3, vUv) );\
+            gl_FragColor = strength * ( lerpBloomFactor(1., 0.25) *  texture2D(blurTexture1, vUv) + \
+                                            lerpBloomFactor(0.25, 0.75) *  texture2D(blurTexture2, vUv) + \
+                                            lerpBloomFactor(0.25, 1.) *  texture2D(blurTexture3, vUv) );\
         }
     `, postUniforms);
 

@@ -270,9 +270,9 @@ export default function (renderer, scene, camera, assets) {
 		light.position.y = 0.01 + a * 100;
 		light.position.z = -10;
 		light.position.x = 5;
-		hemi.intensity = 0.2 + a;
+		hemi.intensity = 0.1 + a;
 		light.intensity = 0.2 +  a;
-		ambient.intensity = 0.2 +  a; 
+		ambient.intensity = 0.1 +  a; 
 
 		light.color.set(0xFFFFFF);
 		light.color.lerp(col, Math.pow(1 - a, 10) );

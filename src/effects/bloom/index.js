@@ -54,7 +54,8 @@ export default function (scene, config) {
 			vec3 luma = vec3( 0.299, 0.587, 0.114 );
 			float v = dot( texel.xyz, luma );
 			vec4 outputColor = vec4( 0., 0., 0., 1. );
-			float alpha = smoothstep( threshold, threshold + 0.01, v );
+            float alpha = smoothstep( threshold, threshold + 0.01, v );
+            
 			gl_FragColor = mix( outputColor, texel, alpha );
         }
     `, preUniforms);

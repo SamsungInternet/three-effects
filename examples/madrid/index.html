@@ -94,12 +94,10 @@
 			}).then(function(assets) {
 				loaderEl.style.opacity = 0;
 				loaderEl.style.backgroundColor = "#FFFFFF00";
+				init(assets);
 			});
 			
 			function init(assets) {
-				console.log(assets);
-				return;
-
 				var canvas = document.querySelector( 'canvas' );
 
 				
@@ -121,18 +119,16 @@
 				renderer.vr.enabled = true;
 				//
 
-				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 50 );
-				camera.position.z = 4;
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 500 );
+				//camera.position.z = 4;
 
-				
-				// Our scene
 				scene = new THREE.Scene();
 				
 
 				onWindowResize();
 				window.addEventListener( 'resize', onWindowResize, false );
 
-				initScene(renderer, scene);
+				initScene(renderer, scene, camera, assets);
 
 				document.body.appendChild( WEBVR.createButton( renderer ) );
 				
@@ -152,8 +148,11 @@
 
 			}
 
+			var tickEvent = { type: "tick", time: 0 };
+
 			function render () {
-				
+				tickEvent.time = window.performance.now() / 1000;
+				scene.dispatchEvent(tickEvent);
 				renderer.render( scene, camera );
 
 			}

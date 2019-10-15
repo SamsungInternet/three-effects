@@ -38,7 +38,7 @@ var Sky = function () {
 		side: BackSide
 	} );
 
-	Mesh.call( this, new BoxBufferGeometry( 1, 1, 1 ), material );
+	Mesh.call( this, new BoxBufferGeometry( 400, 400, 400 ), material );
 
 };
 
@@ -52,7 +52,7 @@ Sky.SkyShader = {
 		"rayleigh": { value: 1 },
 		"mieCoefficient": { value: 0.005 },
 		"mieDirectionalG": { value: 0.8 },
-		"sunPosition": { value: new Vector3() },
+		"sunPosition": { value: new Vector3(0, 1, 1).normalize() },
 		"up": { value: new Vector3( 0, 1, 0 ) }
 	},
 
@@ -112,10 +112,10 @@ Sky.SkyShader = {
 		'	gl_Position.z = gl_Position.w;', // set z to camera.far
 
 		'	vSunDirection = normalize( sunPosition );',
-
+		//'	vSunDirection.z *= -1.;',
 		'	vSunE = sunIntensity( dot( vSunDirection, up ) );',
 
-		'	vSunfade = 1.0 - clamp( 1.0 - exp( ( sunPosition.y / 450000.0 ) ), 0.0, 1.0 );',
+		'	vSunfade = 1.0 - clamp( 1.0 - exp( ( vSunDirection.y / 450000.0 ) ), 0.0, 1.0 );',
 
 		'	float rayleighCoefficient = rayleigh - ( 1.0 * ( 1.0 - vSunfade ) );',
 
@@ -233,4 +233,51 @@ Sky.SkyShader = {
 
 };
 
-export { Sky };
+export default function (renderer, scene, camera, assets) {
+    var group = new THREE.Group();
+
+    var mesh = new Sky();
+
+	var light = new THREE.DirectionalLight(new THREE.Color(0xFFFFFF), 1);
+	
+	light.castShadow = true;
+
+	light.position.set(0, 10, 10);
+	
+	group.add(light);
+
+	light.shadow.mapSize.width = 1024;  // default
+	light.shadow.mapSize.height = 1024; // default
+	light.shadow.camera.near = 1;    // default
+	light.shadow.camera.far = 200;     // default
+	light.shadow.bias = 0.001;
+	light.shadow.radius = 4;
+
+	var hemi = new THREE.HemisphereLight(new THREE.Color(0x888899), new THREE.Color(0x776666), 1);
+
+	group.add(hemi);
+
+
+	var ambient = new THREE.AmbientLight( 0x666666 );
+	group.add(ambient);
+	group.add(mesh);
+	
+	mesh.material.uniforms.sunPosition.value = light.position;
+
+	var col = new THREE.Color(0xFF9966);
+	scene.addEventListener("tick", function (e) {
+		var a = Math.sin(e.time) * 0.5 + 0.5;
+		light.position.y = 0.01 + a * 100;
+		light.position.z = -10;
+		light.position.x = 5;
+		hemi.intensity = 0.2 + a;
+		light.intensity = 0.2 +  a;
+		ambient.intensity = 0.2 +  a; 
+
+		light.color.set(0xFFFFFF);
+		light.color.lerp(col, Math.pow(1 - a, 10) );
+		//light.position.normalize();
+	});
+
+    return group;
+}

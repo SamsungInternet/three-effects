@@ -1,7 +1,7 @@
-import initGround from "./ground.js";
-import initSky from "./sky.js";
-import initStatues from "./statues.js";
-import attachRaycast from "./raycast.js";
+//import initGround from "./ground.js";
+//import initSky from "./sky.js";
+//import initStatues from "./statues.js";
+//import attachRaycast from "./raycast.js";
 
 export default function (renderer, scene) {
     attachRaycast(renderer, scene);

@@ -15,7 +15,7 @@
  * Three.js integration by zz85 http://twitter.com/blurspline
 */
 
-import { THREE } from "../../../dist/build/three-effects.js";
+import { THREE } from "../../../dist/three-effects.js";
 
 const {
 	BackSide,

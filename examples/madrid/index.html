@@ -5,12 +5,48 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
+			body {
+				background-color:aqua;
+			}
 			canvas {
 				position: fixed;
 				top: 0;
 				left:0;
 				width: 100vw;
 				height: 100vh;
+			}
+
+			#loader {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100vw;
+				height: 100vh;
+				background-color: white;
+				z-index: 10000000;
+				transition:opacity 1.6s, background-color 1s;
+			}
+
+			#bar {
+				display: inline-block;
+				position: relative;
+				margin-top: 49.5vh;
+				margin-left: 40vw;
+				width: 20vw;
+				background-color: #EEEEEE;
+				height: 1vh;
+				border-radius: 1vh;
+				
+			}
+
+			#progress {
+				position: relative;
+				width: 1%;
+				background-color: #666666;
+				height: 1vh;
+				opacity: 0;
+				border-radius: 1vh;
+				transition:width 0.1s;
 			}
 		</style>
 
@@ -19,6 +55,11 @@
 	</head>
 	<body>
 		<canvas></canvas>
+		<div id="loader">
+			<div id="bar">
+				<div id="progress"></div>	
+			</div>
+		</div>
 	   <script type="module">
 
 			import { THREE, attachEffects, effectLib } from "../../dist/three-effects.js";
@@ -27,6 +68,9 @@
 			import initScene from "./src/index.js";
 			
 			var camera, scene, renderer;
+
+			var progressEl = document.querySelector("#progress");
+			var loaderEl = document.querySelector("#loader");
 
 			load({
 				"venus_model": "./assets/venus/index.obj",
@@ -43,8 +87,14 @@
 				"ground_material": "./assets/ground/arg.png",
 				
 			}, function(pc){
-				console.log(Math.floor(pc * 100) + "%");
-			}).then(init);
+				progressEl.style.width = Math.floor(pc * 100) + "%";
+				progressEl.style.opacity = pc;
+				
+				//console.log(Math.floor(pc * 100) + "%");
+			}).then(function(assets) {
+				loaderEl.style.opacity = 0;
+				loaderEl.style.backgroundColor = "#FFFFFF00";
+			});
 			
 			function init(assets) {
 				console.log(assets);

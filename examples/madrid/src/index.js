@@ -33,7 +33,14 @@ export default function (renderer, scene, camera, assets) {
 //        "!fxaa": true
     }
 
-    fx(null);
+    var bloomFx = effectLib.bloom(scene);
+    scene.userData.bloom_internal.prePass.onBeforeCompile = function (shader) {
+        shader.fragmentShader = shader.fragmentShader.replace("gl_FragColor", "alpha *= smoothstep(1., 0.9999, texture2D(depthTexture, vUv).r);\ngl_FragColor");
+        console.log(shader);
+    }
+    bloomFx({ strength: 1, radius: 1, threshold: 0.7 });
+
+    fx(["bloom"]);
 
     function setupFX() {
         var arr = [];

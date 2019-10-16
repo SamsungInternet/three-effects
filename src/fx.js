@@ -6,31 +6,6 @@
 
 import * as THREE from 'three';
 
-THREE.ShaderChunk["vr_pars"] = `
-    uniform float VR;
-
-    #define selectVR(novr, left, right) ( (VR > 0.) ? ( (gl_FragCoord.x < VR) ? (left) : (right) ): (novr))
-
-    vec4 textureVR(in sampler2D tex, in vec2 uv) {
-        uv.x = selectVR(uv.x, min(0.5, uv.x), max(0.5, uv.x) );
-        return texture2D(tex, uv);
-    }
-
-    vec4 textureVR(in sampler2D tex, in vec2 uv, float bias) {
-        uv.x = selectVR(uv.x, min(0.5, uv.x), max(0.5, uv.x));
-        return texture2D(tex, uv, bias);
-    }
-
-    #ifdef TEXTURE_LOD_EXT
-
-    vec4 textureVRLod(in sampler2D tex, in vec2 uv, float lod) {
-        uv.x = selectVR(uv.x, min(0.5, uv.x), max(0.5, uv.x));
-        return texture2DLodEXT(tex, uv, bias);
-    }
-
-    #endif
-`;
-
 export default function (scene) {
     var renderTargets = [new THREE.WebGLRenderTarget(1, 1), new THREE.WebGLRenderTarget(1, 1)];
     var depthTexture = new THREE.DepthTexture();
@@ -105,7 +80,7 @@ export default function (scene) {
         u.colorTexture.value = renderTargets[0].texture;
        
         dispatch("afterRender");
-            
+        
         passes.forEach(function (p, i) {
             event.passId = p.passId;
             dispatch("beforePass");
@@ -130,13 +105,13 @@ export default function (scene) {
     function parsePasses( src ) {
         var pattern = /FX_PASS_[0-9]+/gm;
         var arr = src.match(pattern);
-        if(!arr) return [""];
+        if(!arr) return ["main"];
         var set = new Set(arr);
         arr = [...set];
         arr.sort(function(a, b) {
             return a.localeCompare(b);
         });
-        arr.push("");
+        arr.push("main");
         return arr;
     }
 
@@ -166,6 +141,7 @@ export default function (scene) {
                 body.push(`\t${s}_apply(fragColor, vUv);`)
             });
             
+            body.push("fragColor.a = 1.0;")
             if(bc) body.push("#endif");
 
             src = [
@@ -191,7 +167,7 @@ export default function (scene) {
 
         def.forEach(function (d){
             var defines = {};
-            if(d) defines[d] = 1;
+            if(d !== "main") defines[d] = 1;
             var m = new THREE.ShaderMaterial({
                 defines: defines,
                 uniforms: scene.userData,

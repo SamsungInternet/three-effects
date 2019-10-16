@@ -8,6 +8,6 @@ import * as THREE from 'three';
 import * as effectLib from './src/effects/index.js';
 import attachEffects from './src/fx.js';
 import attachSystem from './src/ecs.js';
-
+import ShaderChunk from './src/chunk.js';
 
 export { attachEffects, attachSystem, effectLib, THREE }

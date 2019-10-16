@@ -4,7 +4,7 @@ THREE.ShaderChunk["bloom_pars"] = `
     uniform sampler2D bloom_texture;
 
     void bloom_apply(inout vec4 fragColor, in vec2 uv) {
-        fragColor += texture2D(bloom_texture, uv);
+        fragColor.rgb += texture2D(bloom_texture, uv).rgb;
     }
 `;
 
@@ -16,7 +16,7 @@ export default function (scene, config) {
     var ping = [ new THREE.WebGLRenderTarget(1,1), new THREE.WebGLRenderTarget(1,1), new THREE.WebGLRenderTarget(1,1) ];
     var pong = [ new THREE.WebGLRenderTarget(1,1), new THREE.WebGLRenderTarget(1,1), new THREE.WebGLRenderTarget(1,1) ];
     
-    var passId = config.passId;
+    var passId = config.before || "main";
 
     function getPass(src, uniforms) {
         return new THREE.ShaderMaterial({
@@ -54,7 +54,7 @@ export default function (scene, config) {
 			vec3 luma = vec3( 0.299, 0.587, 0.114 );
 			float v = dot( texel.xyz, luma );
 			vec4 outputColor = vec4( 0., 0., 0., 1. );
-            float alpha = smoothstep( threshold, threshold + 0.01, v );
+            float alpha = smoothstep( threshold, threshold + 0.005, v );
             
 			gl_FragColor = mix( outputColor, texel, alpha );
         }
@@ -69,59 +69,38 @@ export default function (scene, config) {
     var blurPasses = [
         getPass(`
             #include <vr_pars>
-
+            #include <blur_pars>
+            
             uniform sampler2D colorTexture;
             uniform vec2 direction;
             uniform vec2 resolution;
             
             void main(void) {
-                vec4 color = vec4(0.0);
-                vec2 off1 = vec2(1.3333333333333333) * direction;
-                color += textureVR(colorTexture, vUv) * 0.29411764705882354;
-                color += textureVR(colorTexture, vUv + (off1 / resolution)) * 0.35294117647058826;
-                color += textureVR(colorTexture, vUv - (off1 / resolution)) * 0.35294117647058826;
-                gl_FragColor = color; 
-              }
-        `, blurUniforms),
-        getPass(`
-            #include <vr_pars>
-
-            uniform sampler2D colorTexture;
-            uniform vec2 direction;
-            uniform vec2 resolution;
-            
-            void main(void) {
-                vec4 color = vec4(0.0);
-                vec2 off1 = vec2(1.3846153846) * direction;
-                vec2 off2 = vec2(3.2307692308) * direction;
-                color += textureVR(colorTexture, vUv) * 0.2270270270;
-                color += textureVR(colorTexture, vUv + (off1 / resolution)) * 0.3162162162;
-                color += textureVR(colorTexture, vUv - (off1 / resolution)) * 0.3162162162;
-                color += textureVR(colorTexture, vUv + (off2 / resolution)) * 0.0702702703;
-                color += textureVR(colorTexture, vUv - (off2 / resolution)) * 0.0702702703;
-                gl_FragColor = color; 
+                gl_FragColor = blur5(colorTexture, vUv, direction, resolution); 
             }
         `, blurUniforms),
         getPass(`
             #include <vr_pars>
-
+            #include <blur_pars>
+            
             uniform sampler2D colorTexture;
             uniform vec2 direction;
             uniform vec2 resolution;
             
             void main(void) {
-                vec4 color = vec4(0.0);
-                vec2 off1 = vec2(1.411764705882353) * direction;
-                vec2 off2 = vec2(3.2941176470588234) * direction;
-                vec2 off3 = vec2(5.176470588235294) * direction;
-                color += textureVR(colorTexture, vUv) * 0.1964825501511404;
-                color += textureVR(colorTexture, vUv + (off1 / resolution)) * 0.2969069646728344;
-                color += textureVR(colorTexture, vUv - (off1 / resolution)) * 0.2969069646728344;
-                color += textureVR(colorTexture, vUv + (off2 / resolution)) * 0.09447039785044732;
-                color += textureVR(colorTexture, vUv - (off2 / resolution)) * 0.09447039785044732;
-                color += textureVR(colorTexture, vUv + (off3 / resolution)) * 0.010381362401148057;
-                color += textureVR(colorTexture, vUv - (off3 / resolution)) * 0.010381362401148057;
-                gl_FragColor = color; 
+                gl_FragColor = blur9(colorTexture, vUv, direction, resolution); 
+            }
+        `, blurUniforms),
+        getPass(`
+            #include <vr_pars>
+            #include <blur_pars>
+            
+            uniform sampler2D colorTexture;
+            uniform vec2 direction;
+            uniform vec2 resolution;
+            
+            void main(void) {
+                gl_FragColor = blur13(colorTexture, vUv, direction, resolution); 
             }
         `, blurUniforms),
     ];
@@ -199,7 +178,7 @@ export default function (scene, config) {
         performPass(e.renderer, postPass, false, ping[0]);
     };
 
-    scene.addEventListener("afterPass", fn);
+    scene.addEventListener("beforePass", fn);
 
     var fr = function (e) {
         var w = e.size.x * 0.5, h = e.size.y * 0.5;
@@ -216,13 +195,14 @@ export default function (scene, config) {
 
     return function (arg) {
         if ( arg ) {
+            if(arg.before) passId = arg.before;
             for ( var k in arg) {
                 if (controlUniforms[k]) {
                     controlUniforms[k].value = arg[k];
                 }
             }
         } else {
-            scene.removeEventListener("afterPass", fn);
+            scene.removeEventListener("beforePass", fn);
             scene.removeEventListener("resizeEffects", fr);
             
             inp.dispose();

@@ -276,6 +276,8 @@ export default function (renderer, scene, camera, assets) {
 
 		light.color.set(0xFFFFFF);
 		light.color.lerp(col, Math.pow(1 - a, 10) );
+
+		scene.userData["bloom_strength"].value = a;
 		//light.position.normalize();
 	});
 

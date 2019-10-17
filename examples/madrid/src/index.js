@@ -38,9 +38,11 @@ export default function (renderer, scene, camera, assets) {
         shader.fragmentShader = shader.fragmentShader.replace("gl_FragColor", "alpha *= smoothstep(1., 0.9999, texture2D(depthTexture, vUv).r);\ngl_FragColor");
         console.log(shader);
     }
-    bloomFx({ strength: 1, radius: 1, threshold: 0.7 });
+    bloomFx({ strength: 0.8, radius: 1, threshold: 0.8 });
 
-    fx(["bloom"]);
+    effectLib.filmgrain(scene);
+
+    fx([ "fxaa","bloom"]);
 
     function setupFX() {
         var arr = [];
@@ -52,6 +54,7 @@ export default function (renderer, scene, camera, assets) {
 
     scene.addEventListener("tick", function(e) {
         camera.rotation.y += 0.002;
+        scene.userData["filmgrain_time"].value = e.time;
     });
     scene.addEventListener("option", function(e) {
         if(e.name in allFX) {

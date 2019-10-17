@@ -5,7 +5,7 @@ THREE.ShaderChunk["fxaa_pars"] = `
     #define FXAA_REDUCE_MUL   (1.0 / 8.0)
     #define FXAA_SPAN_MAX     8.0
 
-    void fxaa_apply(inout vec4 color, vec2 uv)
+    void fxaa_apply(inout vec4 color, in vec2 uv)
     {
         vec2 inverseVP = vec2(1.0 / resolution.x, 1.0 / resolution.y);
         vec3 rgbNW = texture2D(colorTexture, uv + vec2(-1.0, -1.0) * inverseVP).xyz;
@@ -35,11 +35,11 @@ THREE.ShaderChunk["fxaa_pars"] = `
                 dir * rcpDirMin)) * inverseVP;
         
         vec3 rgbA = 0.5 * (
-            texture2D(colorTexture, uv * inverseVP + dir * (1.0 / 3.0 - 0.5)).xyz +
-            texture2D(colorTexture, uv * inverseVP + dir * (2.0 / 3.0 - 0.5)).xyz);
+            texture2D(colorTexture, uv  + dir * (1.0 / 3.0 - 0.5)).xyz +
+            texture2D(colorTexture, uv + dir * (2.0 / 3.0 - 0.5)).xyz);
         vec3 rgbB = rgbA * 0.5 + 0.25 * (
-            texture2D(colorTexture, uv * inverseVP + dir * -0.5).xyz +
-            texture2D(colorTexture, uv * inverseVP + dir * 0.5).xyz);
+            texture2D(colorTexture, uv + dir * -0.5).xyz +
+            texture2D(colorTexture, uv + dir * 0.5).xyz);
             
         float lumaB = dot(rgbB, luma);
         if ((lumaB < lumaMin) || (lumaB > lumaMax))

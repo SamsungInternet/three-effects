@@ -6,15 +6,14 @@
 
 import * as THREE from 'three';
 
-export default function (scene) {
+export default function (scene, antialias) {
     var renderTargets = [new THREE.WebGLRenderTarget(1, 1), new THREE.WebGLRenderTarget(1, 1)];
+    var multiTarget = new THREE.WebGLMultisampleRenderTarget(1, 1);
     var depthTexture = new THREE.DepthTexture();
     depthTexture.format = THREE.DepthStencilFormat;
     depthTexture.type = THREE.UnsignedInt248Type;
 
-    window.depthTexture = depthTexture;
-
-    renderTargets[0].depthTexture = depthTexture;
+    renderTargets[0].depthTexture = multiTarget.depthTexture = depthTexture;
     
     scene.userData.VR = { value: 0 };
     scene.userData.colorTexture = { value: null };
@@ -66,7 +65,7 @@ export default function (scene) {
         event.renderTarget = renderTargets[0];
         dispatch("beforeRender");
 
-        renderer.setRenderTarget(renderTargets[0]);
+        renderer.setRenderTarget(antialias ? multiTarget : renderTargets[0]);
     };
 
     scene.onAfterRender = function (renderer, scene, camera) {
@@ -158,6 +157,7 @@ export default function (scene) {
         var def = parsePasses(src);
 
         src = [
+            "#include <common>",
             "uniform sampler2D colorTexture;",
             "uniform sampler2D depthTexture;",
             "uniform vec2 resolution;",

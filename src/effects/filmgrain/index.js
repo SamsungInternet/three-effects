@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-THREE.ShaderChunk["filmgrain"] = `
+THREE.ShaderChunk["filmgrain_pars"] = `
     uniform float filmgrain_time;
     uniform float filmgrain_sCount;
     uniform float filmgrain_sIntensity;
@@ -13,7 +13,7 @@ THREE.ShaderChunk["filmgrain"] = `
 		   vec2 sc = vec2( sin( uv.y * filmgrain_sCount ), cos( uv.y * filmgrain_sCount ) );
 		   cResult += cTextureScreen.rgb * vec3( sc.x, sc.y, sc.x ) * filmgrain_sIntensity;
            cResult = cTextureScreen.rgb + clamp( filmgrain_nIntensity, 0.0,1.0 ) * ( cResult - cTextureScreen.rgb );
-		   color.rgb =  cResult;",
+		   color.rgb =  cResult;
 	}
 `
 
@@ -21,8 +21,8 @@ export default function (scene, config) {
 
     var controlUniforms = {
         "time":       { type: "f", value: 0.0 },
-        "nIntensity": { type: "f", value: 0.5 },
-        "sIntensity": { type: "f", value: 0.05 },
+        "nIntensity": { type: "f", value: 0.3 },
+        "sIntensity": { type: "f", value: 0.03 },
         "sCount":     { type: "f", value: 4096 }
     };
 

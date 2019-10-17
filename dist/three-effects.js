@@ -49839,7 +49839,7 @@ ShaderChunk["fxaa_pars"] = `
     #define FXAA_REDUCE_MUL   (1.0 / 8.0)
     #define FXAA_SPAN_MAX     8.0
 
-    void fxaa_apply(inout vec4 color, vec2 uv)
+    void fxaa_apply(inout vec4 color, in vec2 uv)
     {
         vec2 inverseVP = vec2(1.0 / resolution.x, 1.0 / resolution.y);
         vec3 rgbNW = texture2D(colorTexture, uv + vec2(-1.0, -1.0) * inverseVP).xyz;
@@ -49869,11 +49869,11 @@ ShaderChunk["fxaa_pars"] = `
                 dir * rcpDirMin)) * inverseVP;
         
         vec3 rgbA = 0.5 * (
-            texture2D(colorTexture, uv * inverseVP + dir * (1.0 / 3.0 - 0.5)).xyz +
-            texture2D(colorTexture, uv * inverseVP + dir * (2.0 / 3.0 - 0.5)).xyz);
+            texture2D(colorTexture, uv  + dir * (1.0 / 3.0 - 0.5)).xyz +
+            texture2D(colorTexture, uv + dir * (2.0 / 3.0 - 0.5)).xyz);
         vec3 rgbB = rgbA * 0.5 + 0.25 * (
-            texture2D(colorTexture, uv * inverseVP + dir * -0.5).xyz +
-            texture2D(colorTexture, uv * inverseVP + dir * 0.5).xyz);
+            texture2D(colorTexture, uv + dir * -0.5).xyz +
+            texture2D(colorTexture, uv + dir * 0.5).xyz);
             
         float lumaB = dot(rgbB, luma);
         if ((lumaB < lumaMin) || (lumaB > lumaMax))
@@ -49888,12 +49888,67 @@ function index$1(){
     return function () {}
 }
 
+ShaderChunk["filmgrain_pars"] = `
+    uniform float filmgrain_time;
+    uniform float filmgrain_sCount;
+    uniform float filmgrain_sIntensity;
+    uniform float filmgrain_nIntensity;
+    
+    void filmgrain_apply(inout vec4 color, in vec2 uv) {
+           vec4 cTextureScreen = color;
+		   float dx = rand( uv + mod(filmgrain_time, 3.14) );
+		   vec3 cResult = cTextureScreen.rgb + cTextureScreen.rgb * clamp( 0.1 + dx, 0.0, 1.0 );
+		   vec2 sc = vec2( sin( uv.y * filmgrain_sCount ), cos( uv.y * filmgrain_sCount ) );
+		   cResult += cTextureScreen.rgb * vec3( sc.x, sc.y, sc.x ) * filmgrain_sIntensity;
+           cResult = cTextureScreen.rgb + clamp( filmgrain_nIntensity, 0.0,1.0 ) * ( cResult - cTextureScreen.rgb );
+		   color.rgb =  cResult;
+	}
+`;
+
+function index$2 (scene, config) {
+
+    var controlUniforms = {
+        "time":       { type: "f", value: 0.0 },
+        "nIntensity": { type: "f", value: 0.3 },
+        "sIntensity": { type: "f", value: 0.03 },
+        "sCount":     { type: "f", value: 4096 }
+    };
+
+    function handleConf(conf) {
+        for(var k in conf) {
+            if(k in controlUniforms){
+                controlUniforms[k].value = conf[k];
+            }
+        }
+    }
+
+    if(config) handleConf(config);
+
+    scene.userData["filmgrain_time"] = controlUniforms["time"];
+    scene.userData["filmgrain_sCount"] = controlUniforms["sCount"];
+    scene.userData["filmgrain_sIntensity"] = controlUniforms["sIntensity"];
+    scene.userData["filmgrain_nIntensity"] = controlUniforms["nIntensity"];
+    
+    return function (arg) {
+        if(arg) {
+            handleConf(arg);
+            return;
+        }
+        delete scene.userData["filmgrain_time"];
+        delete scene.userData["filmgrain_sCount"];
+        delete scene.userData["filmgrain_sIntensity"];
+        delete scene.userData["filmgrain_nIntensity"];
+    }
+
+}
+
 //export { bloom, fxaa, filmgrain, colors, glitch }
 
-var index$2 = /*#__PURE__*/Object.freeze({
+var index$3 = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	bloom: index,
-	fxaa: index$1
+	fxaa: index$1,
+	filmgrain: index$2
 });
 
 /* 
@@ -50054,6 +50109,7 @@ function fx (scene) {
         var def = parsePasses(src);
 
         src = [
+            "#include <common>",
             "uniform sampler2D colorTexture;",
             "uniform sampler2D depthTexture;",
             "uniform vec2 resolution;",
@@ -50285,4 +50341,4 @@ ShaderChunk["blur_pars"] = `
     #endif
 `;
 
-export { three_module as THREE, fx as attachEffects, ecs as attachSystem, index$2 as effectLib };
+export { three_module as THREE, fx as attachEffects, ecs as attachSystem, index$3 as effectLib };

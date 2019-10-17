@@ -242,7 +242,7 @@ export default function (renderer, scene, camera, assets) {
 	
 	light.castShadow = true;
 
-	light.position.set(0, 10, 10);
+	light.position.set(10, 100, 100);
 	
 	group.add(light);
 
@@ -264,14 +264,13 @@ export default function (renderer, scene, camera, assets) {
 	
 	mesh.material.uniforms.sunPosition.value = light.position;
 
-	var col = new THREE.Color(0xFF9966);
-	scene.addEventListener("tick", function (e) {
-		var a = Math.sin(e.time) * 0.5 + 0.5;
-		light.position.y = 0.01 + a * 100;
-		light.position.z = -10;
-		light.position.x = 5;
+	var col = new THREE.Color(0xCC7733);
+	
+	var a = 0;
+	
+	var fn = function (e) {
 		hemi.intensity = 0.1 + a;
-		light.intensity = 0.2 +  a;
+		light.intensity = 0.1 +  a;
 		ambient.intensity = 0.1 +  a; 
 
 		light.color.set(0xFFFFFF);
@@ -279,6 +278,26 @@ export default function (renderer, scene, camera, assets) {
 
 		scene.userData["bloom_strength"].value = a;
 		//light.position.normalize();
+	};
+
+	var vec = new THREE.Vector3();
+	
+	([renderer.vr.getController(0), renderer.vr.getController(1)]).forEach(function (c) {
+		c.addEventListener("selectstart", function (e) {
+			c.isPressed = true;
+		});
+		c.addEventListener("selectend", function (e) {
+			delete c.isPressed;
+		});
+	});
+
+	scene.addEventListener("beforeRender", function () {
+		([renderer.vr.getController(0), renderer.vr.getController(1)]).forEach(function (c) {
+			c.getWorldDirection(vec);
+			if(vec.y > 0 || !c.isPressed) return;
+			light.position.copy(vec).multiplyScalar(-100);
+			a = -vec.y;
+		});
 	});
 
     return group;

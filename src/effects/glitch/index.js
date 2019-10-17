@@ -129,7 +129,8 @@ export default function (scene) {
         } else {
             for(k in controlUniforms) {
                 delete scene.userData["glitch_" + k]; 
-            }
+			}
+			// TODO MORE CLEANUP
         }
     }
 }

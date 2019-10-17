@@ -9,6 +9,7 @@ import * as THREE from 'three';
 export default function (scene, antialias) {
     var renderTargets = [new THREE.WebGLRenderTarget(1, 1), new THREE.WebGLRenderTarget(1, 1)];
     var multiTarget = new THREE.WebGLMultisampleRenderTarget(1, 1);
+    multiTarget.samples = antialias === true ? 4 : antialias;
     var depthTexture = new THREE.DepthTexture();
     depthTexture.format = THREE.DepthStencilFormat;
     depthTexture.type = THREE.UnsignedInt248Type;
@@ -52,7 +53,7 @@ export default function (scene, antialias) {
         if(vsize.x !== renderTargets[0].width || vsize.y !== renderTargets[0].height) {
             renderTargets[0].setSize(vsize.x, vsize.y);
             renderTargets[1].setSize(vsize.x, vsize.y);
-            
+            multiTarget.setSize(vsize.x, vsize.y);
             dispatch("resizeEffects");
         }
 
@@ -65,7 +66,7 @@ export default function (scene, antialias) {
         event.renderTarget = renderTargets[0];
         dispatch("beforeRender");
 
-        renderer.setRenderTarget(antialias ? multiTarget : renderTargets[0]);
+        renderer.setRenderTarget(antialias && renderer.capabilities.isWebGL2 ? multiTarget : renderTargets[0]);
     };
 
     scene.onAfterRender = function (renderer, scene, camera) {
@@ -75,8 +76,8 @@ export default function (scene, antialias) {
         renderer.vr.enabled = false;
         
         var u = scene.userData;
-    
-        u.colorTexture.value = renderTargets[0].texture;
+        event.renderTarget = antialias && renderer.capabilities.isWebGL2 ? multiTarget : renderTargets[0];
+        u.colorTexture.value = event.renderTarget.texture;
        
         dispatch("afterRender");
         

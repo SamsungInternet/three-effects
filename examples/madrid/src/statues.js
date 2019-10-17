@@ -4,13 +4,13 @@ export default function (renderer, scene, camera, assets) {
     var group = new THREE.Group();
 
     var material = new THREE.MeshPhysicalMaterial({
-        metalness: 0,
+        metalness: 0.04,
         roughness: 1,
-        aoMapIntensity: 0.2,
+        aoMapIntensity: 0.24,
         map: assets["venus_diffuse"],
         aoMap: assets["venus_material"],
         roughnessMap: assets["venus_material"],
-        metalnessMap: assets["venus_material"],
+        //metalnessMap: assets["venus_material"],
         normalMap: assets["venus_normals"],
         side: THREE.FrontSide
     });

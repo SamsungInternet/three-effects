@@ -242,7 +242,7 @@ export default function (renderer, scene, camera, assets) {
 	
 	light.castShadow = true;
 
-	light.position.set(10, 100, 100);
+	light.position.set(0, 100, 0);
 	
 	group.add(light);
 
@@ -266,7 +266,7 @@ export default function (renderer, scene, camera, assets) {
 
 	var col = new THREE.Color(0xCC7733);
 	
-	var a = 0;
+	var a = 1;
 	
 	var fn = function (e) {
 		hemi.intensity = 0.1 + a;
@@ -277,8 +277,9 @@ export default function (renderer, scene, camera, assets) {
 		light.color.lerp(col, Math.pow(1 - a, 10) );
 
 		scene.userData["bloom_strength"].value = a;
-		//light.position.normalize();
 	};
+
+	window.setTimeout(fn,0);
 
 	var vec = new THREE.Vector3();
 	
@@ -297,6 +298,8 @@ export default function (renderer, scene, camera, assets) {
 			if(vec.y > 0 || !c.isPressed) return;
 			light.position.copy(vec).multiplyScalar(-100);
 			a = -vec.y;
+			fn();
+			renderer.shadowMap.needsUpdate = true;
 		});
 	});
 

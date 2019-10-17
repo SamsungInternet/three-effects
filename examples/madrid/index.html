@@ -102,9 +102,9 @@
 				var canvas = document.querySelector( 'canvas' );
 
 				
-				if(window.location.hash === "#multiview") {
+				if(window.location.hash === "#multiview" || window.location.hash === "#antialias") {
 
-					var context = canvas.getContext( 'webgl2', { antialias: false, xrCompatible: true } );
+					var context = canvas.getContext( 'webgl2', { antialias: window.location.hash === "#antialias", xrCompatible: true } );
 
 					renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
 

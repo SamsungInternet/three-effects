@@ -15,12 +15,14 @@ export default function (renderer, scene, camera, assets) {
 
     //renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMap.enabled = true;
-	
+    renderer.shadowMap.autoUpdate = false;
+    renderer.shadowMap.needsUpdate = true;
+
     Object.values(objects).forEach(function (o) { scene.add(o); });
     
     camera.position.y = 1.75;
 
-    var fx = attachEffects(scene);
+    var fx = attachEffects(scene, 4);
 
     var allFX = {
 //        ssao: true,
@@ -35,14 +37,15 @@ export default function (renderer, scene, camera, assets) {
 
     var bloomFx = effectLib.bloom(scene);
     scene.userData.bloom_internal.prePass.onBeforeCompile = function (shader) {
-        shader.fragmentShader = shader.fragmentShader.replace("gl_FragColor", "alpha *= smoothstep(1., 0.9999, texture2D(depthTexture, vUv).r);\ngl_FragColor");
-        console.log(shader);
+        shader.fragmentShader = shader.fragmentShader.replace("gl_FragColor", "alpha *= smoothstep(1., 0.999999, texture2D(depthTexture, vUv).r);\ngl_FragColor");
+        //console.log(shader);
     }
-    bloomFx({ strength: 0.8, radius: 1, threshold: 0.8 });
+
+    bloomFx({ strength: 1, radius: 1, threshold: 0.7 });
 
     effectLib.filmgrain(scene);
 
-    fx([ "fxaa","bloom"]);
+    fx(["bloom"]);
 
     function setupFX() {
         var arr = [];
@@ -56,6 +59,7 @@ export default function (renderer, scene, camera, assets) {
         camera.rotation.y += 0.002;
         scene.userData["filmgrain_time"].value = e.time;
     });
+
     scene.addEventListener("option", function(e) {
         if(e.name in allFX) {
             allFX[e.name] = e.value;

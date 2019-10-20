@@ -23,8 +23,7 @@
 		<canvas></canvas>
 	   <script type="module">
 
-			import { THREE, attachEffects, effectLib } from "../../dist/three-effects.js";
-			//import { WEBVR } from "../../../node_modules/three/examples/jsm/vr/WebVR.js";
+			import { THREE, attachEffects, attach } from "../../dist/three-effects.js";
 			import { WEBVR } from "../WebVR.js";
 
 		    var camera, scene, renderer, controls, fx;
@@ -125,7 +124,7 @@
 				fx = attachEffects(scene);
 
 				// oneliners ftw
-				(effectLib.bloom(scene))({ strength: 1, radius: 1, threshold: 0.1 });
+				(attach.bloom(scene))({ strength: 1, radius: 1, threshold: 0.1 });
 
                 scene.userData.time = { value: 0 };
                 

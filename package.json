@@ -1,8 +1,9 @@
 {
   "name": "three-effects",
   "version": "0.1.0",
-  "description": "A minimal post processing framework for Threejs",
-  "main": "./index.js",
+  "description": "Post processing and entity component systems for Threejs",
+  "main": "./dist/three-effects.js",
+  "module":"./dist/three-effects.module.js",
   "scripts": {
     "dist": "rollup -c"
   },

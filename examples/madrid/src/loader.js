@@ -1,5 +1,8 @@
-import { THREE} from "../../../dist/three-effects.js";
-import {OBJLoader} from "./OBJLoader.js";
+import { THREE } from "../../../dist/three-effects.js";
+import { OBJLoader } from "./loader/OBJLoader.js";
+import { BasisTextureLoader } from "./loader/BasisTextureLoader.js";
+
+var basis_path = './src/loader/';
 
 export default function(files, progressCb) {
     var handlers = {
@@ -7,6 +10,11 @@ export default function(files, progressCb) {
         "jpeg": THREE.TextureLoader,
         "png": THREE.TextureLoader,
         "gif": THREE.TextureLoader,
+        "basis": function () {
+            BasisTextureLoader.call(this);
+            this.setTranscoderPath( basis_path );
+			this.detectSupport( renderer );
+        },
         "obj": OBJLoader,
         "wav": THREE.AudioLoader,
         "mp3": THREE.AudioLoader,

@@ -63,7 +63,7 @@
 		</div>
 	   <script type="module">
 
-			import { THREE, attachEffects, effectLib } from "../../dist/three-effects.js";
+			import { THREE } from "../../dist/three-effects.js";
 			import { WEBVR } from "../WebVR.js";
 			import load from "./src/loader.js";
 			import initScene from "./src/index.js";
@@ -86,6 +86,11 @@
 				"ground_diffuse": "./assets/ground/diffuse.jpg",
 				"ground_normals": "./assets/ground/normals.png",
 				"ground_material": "./assets/ground/arg.png",
+
+				"tick": "./assets/tick.wav",
+				"woosh": "./assets/woosh.wav",
+				"voop": "./assets/voop.wav",
+				"zit": "./assets/zit.wav"
 				
 			}, function(pc){
 				progressEl.style.width = Math.floor(pc * 100) + "%";

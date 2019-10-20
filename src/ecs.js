@@ -10,46 +10,43 @@ export default function (obj, name, api) {
 
     var listeners = {};
 
+    function addListener(lname, fn) {
+        listeners[lname] = fn
+        obj.addEventListener(lname, listeners[lname]);
+    }
+
+    addListener(name + "/register", function(e) {
+        var index = objects.indexOf(e.entity);
+        if( index !== -1) {
+            objects.splice(index, 1);
+            if(api.remove) api.remove(e, objects, name);
+            delete e.entity.userdata[name];
+        }
+        objects.push(e.entity);
+        e.entity.userData[name] = api.init(e, objects, name, e.reset);
+    });
+
+    addListener(name + "/unregister", function(e) {
+        var index = objects.indexOf(e.entity);
+        if(index !== -1) {
+            objects.splice(index, 1);
+            if(api.remove) api.remove(e, objects, name);
+            delete e.entity.userData[name];
+        }
+    });
+
     for (var k in api) {
         var lname, fn;
         switch(k) {
             case "init": 
-                lname = name + "/register";
-                fn = function(e) {
-                    var index = objects.indexOf(e.entity);
-                    if( index !== -1) {
-                        if(e.keep) return;
-                        objects.splice(index, 1);
-                        if (api.remove) api.remove(e, objects, name);
-                        delete e.entity.userdata[name];
-                    }
-                    objects.push(e.entity);
-                    e.entity.userData[name] = api.init(e, objects, name, e.reset);
-                };
-                break;
-            
             case "remove": 
-                lname = name + "/unregister";
-                fn = function(e) { 
-                    var index = objects.indexOf(e.entity);
-                    if(index !== -1) {
-                        objects.splice(index, 1);
-                        if (api.remove) api.remove(e, objects, name);
-                        delete e.entity.userdata[name];
-                    }
-                };
-                break;
-            
             case "control": continue;
-            
             default:
-                lname = k;
-                fn = function (ev) {
-                    api[k].call(ev, objects, name);
-                };
+                addListener(k, function(e) {
+                    api[k](e, objects, name);
+                });
+                break;
         }
-        listeners[lname] = fn;
-        obj.addEventListener(lname, fn);
     }
 
     return function (arg) {

@@ -1,10 +1,12 @@
-import { THREE, attachEffects, attachSystem, effectLib } from "../../../dist/three-effects.js";
+import { THREE, attachSystem } from "../../../dist/three-effects.js";
 
-export default function (renderer, scene, camera, assets) {
-    var holdDuration = 1618;
+export default function (scene, config) {
+    config = config || {};
 
-    function getHand(id) {
-        var c = renderer.getController(id);
+    var holdDuration = config.holdDuration || 1000;
+
+    function getHand(renderer, id) {
+        var c = renderer ? renderer.vr.getController(id) : new THREE.Group();
         
         var ret = {
             index: id,
@@ -12,61 +14,146 @@ export default function (renderer, scene, camera, assets) {
             ray: new THREE.Ray(),
             armed: false,
             pressTime: 0,
+            pressed: false,
             object: null,
-            mesh: new THREE.Mesh(THREE.CylinderBufferGeometry(0.04, 0.05, 1000, 16, 1, true), new THREE.MeshBasicMaterial({
+            mesh: renderer ? new THREE.Mesh(new THREE.CylinderBufferGeometry(0.01, 0.01, 1000, 6, 1, true), new THREE.MeshBasicMaterial({
                 color: 0xDDEEFF,
-                transparent: true
-            })),
+                transparent: true,
+                depthTest: true,
+                depthWrite: false
+            })) : new THREE.Group(),
+            raycaster: new THREE.Raycaster(),
+            isMouse: !renderer
         }
         
+        if(ret.mesh.material) {
+            ret.mesh.material.opacity = 0.33;            
+            scene.add(ret.mesh);
+        }
+
         ret.startFn = function (e) {
             ret.armed = true;
-            ret.pressedAt = window.performance.now();
-            dispatch(ret.object, event, "interact/press")
+            ret.pressed = true;
+            ret.pressTime = window.performance.now();
+            if(ret.object) dispatch(ret.object, ret.hit || event, "interact/press")
         }
 
         ret.endFn = function (e) {
-            if(ret.object && ret.armed) dispatch(ret.object, event, "interact/release");
+            ret.pressed = false;
+            if(ret.object && ret.armed) dispatch(ret.object, ret.hit || event, "interact/release");
             ret.armed = false;
         }
         
-        c.addEventListener("selectstart", startFn);
-        c.addEventListener("selectend", startFn);
+        c.addEventListener("selectstart", ret.startFn);
+        c.addEventListener("selectend", ret.endFn);
         
         return ret;
     }
     
-    var hands = [getHand(0), getHand(1)];
+    var nohands = [getHand()];
+    var hands;
     
-    var raycaster = new THREE.Raycaster();
-
-    var event = { type: "", intersect: null};
+    var event = { type: ""};
 
     function dispatch(obj, ev, s) {
         ev.type = s;
+        if(s !== "interact/move")   console.log(s);
         obj.dispatchEvent(ev);
+       
     }
 
-    attachSystem(scene, "raycast", {
+    var vfrom = new THREE.Vector3(0, 0, 1);
+
+    var mouse = new THREE.Vector2();
+
+    function onMouseMove( event ) {
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+    
+    }
+
+    window.addEventListener( 'mousemove', onMouseMove, false );
+
+    var isRotating = false;
+    
+    function onMouseDown( event ) {
+        if(event.which === 3) {
+            isRotating = true;
+        } else {
+            nohands[0].controller.dispatchEvent({ type: "selectstart" });
+        }
+    }
+    
+    window.addEventListener( 'mousedown', onMouseDown, false );
+
+    function onMouseUp( event ) {
+        if (event.which === 3) {
+            isRotating = false;
+        } else {
+            nohands[0].controller.dispatchEvent({ type: "selectend" });
+        }
+    }
+
+    window.addEventListener( 'mouseup', onMouseUp, false );
+
+    document.body.addEventListener("contextmenu", function(evt){evt.preventDefault();return false;});
+
+    var euler = new THREE.Euler( 0, 0, 0, 'YXZ' );
+
+    attachSystem(scene, "interact", {
         init: function (e, objects, name) {
             var data = e.data || {};
             return {
-                important: data.important || false,
-                label: data.label || ""
+                important: data.important || false
             }
         },
 
         beforeRender: function (e, objects, name) {
+            if(!hands)  hands = [getHand(e.renderer, 0), getHand(e.renderer, 1)];
+
+
             var t = window.performance.now();
 
-            hands.forEach(function (hand) {
+            (e.renderer.vr.isPresenting() ? hands : nohands).forEach(function (hand) {
                 var currentObject = hand.object;
-                var intersects = raycaster.intersectObjects( objects );
+                var c = hand.controller;
+                hand.mesh.visible = c.visible;
+
+                if(!c.visible) return;
+
+                var r = hand.ray;
+
+                if(hand.isMouse) {
+                    if(isRotating) {
+                        euler.y += -mouse.x * 0.01;
+                        euler.x += mouse.y * 0.01;
+                        euler.x = Math.min(Math.PI * 0.49, Math.max(-Math.PI * 0.49, euler.x));
+                        e.camera.quaternion.setFromEuler(euler);
+                    }
+                    hand.raycaster.setFromCamera( mouse, e.camera );
+                } else {
+                    c.getWorldPosition(r.origin);
+                    c.getWorldDirection(r.direction);
+                    hand.raycaster.ray.origin.lerp(r.origin, 0.2);
+                    hand.raycaster.ray.direction.lerp(r.direction, 0.1);
+                }
+                
+                hand.mesh.quaternion.setFromUnitVectors( vfrom, hand.raycaster.ray.direction );
+                
+                hand.mesh.position.copy( hand.raycaster.ray.origin);
+
+                var intersects = hand.raycaster.intersectObjects( objects );
+                
+                delete hand.hit;
+
+                event.hand = hand;
                 
                 if(intersects.length) {
                     var hit = intersects[0];
                     var obj = hit.object;
                     hit.hand = hand;
+                    hand.hit = hit;
+
                     if(obj !== currentObject){
                         dispatch(obj, hit, "interact/enter");
                         if(currentObject) {
@@ -74,21 +161,21 @@ export default function (renderer, scene, camera, assets) {
                             dispatch(currentObject, event, "interact/leave");
                         }
                         currentObject = obj;
-                    } 
-                    
-                    hit.hold = hand.armed ? (t - hand.pressTime) / holdDuration : 0;
-                    
-                    if(hand.armed && t >= hand.pressTime + holdDuration){
-                        hit.hold=1;
-                        hand.armed = false;
-                        dispatch(obj, hit, "interact/hold");
-                    } else {
-                        hit.hold = hand.armed ? (t - hand.pressTime) / holdDuration : 0;
                     }
                     
-                    dispatch(currentObject, hit, "interact/trace");
+                    hand.hold = hand.armed ? (t - hand.pressTime) / holdDuration : 0;
+                    
+                    if(hand.armed && t >= hand.pressTime + holdDuration){
+                        dispatch(obj, hit, "interact/hold");
+                        hand.hold = 0;
+                        hand.armed = false;
+                        hand.pressTime = t;
+                    } 
+
+                    dispatch(currentObject, hit, "interact/move");
                 } else if(currentObject){
                     hand.armed = false;
+                    hand.hold = 0;
                     dispatch(currentObject, event, "interact/leave");
                     currentObject = null;
                 }

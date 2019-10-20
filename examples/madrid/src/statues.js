@@ -4,22 +4,18 @@ export default function (renderer, scene, camera, assets) {
     var group = new THREE.Group();
 
     var material = new THREE.MeshPhysicalMaterial({
-        metalness: 0.04,
+        metalness: 0,
         roughness: 1,
-        aoMapIntensity: 0.24,
+        aoMapIntensity: 0.3,
         map: assets["venus_diffuse"],
         aoMap: assets["venus_material"],
         roughnessMap: assets["venus_material"],
-        //metalnessMap: assets["venus_material"],
-        normalMap: assets["venus_normals"],
-        side: THREE.FrontSide
+        normalMap: assets["venus_normals"]
     });
 
     assets["venus_model"].scale(0.05,0.05,0.05);
-
-    var mesh = new THREE.Mesh(assets["venus_model"], material);
-
-    var arr = ["bloom", "outline", "ssao", "outline", "fxaa", "colors", "godrays"];
+    assets["venus_model"].computeBoundingBox();
+    var arr = ["bloom", "outline", "ssao", "filmgrain", "fxaa", "colors", "godrays"];
 
     arr.forEach(function(s, i){
         var m = new THREE.Mesh(assets["venus_model"], material.clone());
@@ -31,7 +27,33 @@ export default function (renderer, scene, camera, assets) {
         m.position.set(Math.sin(a) * 5, 0, Math.cos(a) * 5);
         var r =  (0.4 + i / arr.length);
         m.rotation.y = Math.PI * 2 * Math.round(r * 4) / 4;
+        
         group.add(m);
+
+        scene.dispatchEvent({ type: "interact/register", entity: m});
+        
+        m.addEventListener("interact/enter",function () {
+            m.material.emissive.set(0x111111);
+            scene.dispatchEvent({ type: "audio/tick" });
+        });
+
+        m.addEventListener("interact/leave",function () {
+            m.material.emissive.set(0x000000);
+        });
+
+        var ev = {type: "option", name: s, value: false};
+       
+        var isActive = false;
+    
+        m.addEventListener("interact/press",function () {
+            isActive = !isActive;
+            m.material.color.setHSL(i / arr.length, isActive ? 0.75 : 0.25, isActive ? 0.75 : 0.5);
+            ev.value = isActive;
+            scene.dispatchEvent(ev);
+            scene.dispatchEvent({ type: "audio/zit" });
+        });
+
+        scene.dispatchEvent(ev);
     })
     
     group.position.y = -0.01;

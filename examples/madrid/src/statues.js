@@ -16,7 +16,7 @@ export default function (renderer, scene, camera, assets) {
     assets["venus_model"].scale(0.05,0.05,0.05);
     assets["venus_model"].computeBoundingBox();
 
-    var arr = ["bloom", "outline", "ssao", "filmgrain", "fxaa", "colors", "godrays"];
+    var arr = ["bloom", "outline", "ssao", "filmgrain", "fxaa", "colors", "godrays", "!glitch"];
 
     arr.forEach(function(s, i){
         var m = new THREE.Mesh(assets["venus_model"], material.clone());

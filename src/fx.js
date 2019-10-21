@@ -145,7 +145,7 @@ export default function (scene, antialias) {
 
                 if(!s) return;
 
-                if(s[0] = "#") {
+                if(s[0] === "#") {
                     head.push(`#include <${s.replace("#", "")}>`);
                 } else if(s.match(symPattern)) {    
                     head.push(`#include <${s}_pars>`);

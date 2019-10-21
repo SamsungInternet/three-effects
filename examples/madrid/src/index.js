@@ -41,10 +41,13 @@ export default function (renderer, scene, camera, assets) {
     //    colors: false,
     //    "!fxaa": true,
         filmgrain: false,
-    //    "!glitch": false,
+        "!glitch": false,
     }
 
     attach.bloom(scene, { strength: 0.33, radius: 1, threshold: 0.66 });
+    attach.glitch(scene);
+
+    scene.userData.glitch_intensity.value = 0.8;
 
     scene.userData.bloom_internal.prePass.onBeforeCompile = function (shader) {
         shader.fragmentShader = shader.fragmentShader.replace("gl_FragColor", "alpha *= smoothstep(1., 0.999, texture2D(depthTexture, vUv).r);\ngl_FragColor");

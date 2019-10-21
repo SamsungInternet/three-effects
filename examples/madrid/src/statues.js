@@ -6,7 +6,7 @@ export default function (renderer, scene, camera, assets) {
     var material = new THREE.MeshPhysicalMaterial({
         metalness: 0,
         roughness: 1,
-        aoMapIntensity: 0.3,
+        aoMapIntensity: 0.33,
         map: assets["venus_diffuse"],
         aoMap: assets["venus_material"],
         roughnessMap: assets["venus_material"],
@@ -15,6 +15,7 @@ export default function (renderer, scene, camera, assets) {
 
     assets["venus_model"].scale(0.05,0.05,0.05);
     assets["venus_model"].computeBoundingBox();
+
     var arr = ["bloom", "outline", "ssao", "filmgrain", "fxaa", "colors", "godrays"];
 
     arr.forEach(function(s, i){
@@ -23,8 +24,10 @@ export default function (renderer, scene, camera, assets) {
         m.receiveShadow = true;
         
         m.material.color.setHSL(i/arr.length, 0.8, 0.66);
+
         var a = Math.PI * 2 * (i / arr.length);
         m.position.set(Math.sin(a) * 5, 0, Math.cos(a) * 5);
+    
         var r =  (0.4 + i / arr.length);
         m.rotation.y = Math.PI * 2 * Math.round(r * 4) / 4;
         

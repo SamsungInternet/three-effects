@@ -19,8 +19,8 @@ export default function (renderer, scene, camera, assets) {
 
     (["map", "roughnessMap", "normalMap", "metalnessMap", "aoMap"]).forEach(function(k){
         if(!material[k]) return;
-        material[k].wrapS = THREE.RepeatWrapping;
-        material[k].wrapT = THREE.RepeatWrapping;
+        material[k].wrapS = THREE.MirroredRepeatWrapping;
+        material[k].wrapT = THREE.MirroredRepeatWrapping;
         material[k].anisotropy = 4;
         material[k].repeat.set(333, 333);
     });
@@ -38,23 +38,29 @@ export default function (renderer, scene, camera, assets) {
 
     var pg = new THREE.PlaneBufferGeometry(2,2);
     pg.rotateX(-Math.PI / 2);
+
+    
     var pointers = ([0, 1]).map(function(i){
+        var timeUniform = { value: 0 };
+
         var pointer = new THREE.Mesh(pg, new THREE.MeshBasicMaterial({ depthWrite: false, depthTest: true, transparent: true }));
         pointer.material.onBeforeCompile = function(shader){
-            shader.uniforms.time = { value: 0 };
+            shader.uniforms.time = timeUniform;
             shader.vertexShader = "varying vec2 vUv;\n" + shader.vertexShader.replace("#include <uv_vertex>", `
                 vUv = uv;
                 `
             );
             shader.fragmentShader = "varying vec2 vUv;uniform float time;\n" + shader.fragmentShader.replace("gl_FragColor", `
                 float d =  distance(vUv, vec2(0.5));
-                //d = smoothstep(0., 1, d);
-                d = min(d, smoothstep(0.5, 0.33, d)) ;
-                diffuseColor.a = pow(d,  2.) * 4.;
+                d = min(d, smoothstep(0.5, 0.3 + 0.06 * sin(time), d)) ;
+                diffuseColor.a = pow(d,  3.) * 9.;
                 gl_FragColor`
             );
         };
+
+        pointer.time = timeUniform;
         pointer.material.color.setHex(0xCCCCCC);
+        pointer.visible = false;
         group.add(pointer);
         return pointer;
     });
@@ -83,7 +89,7 @@ export default function (renderer, scene, camera, assets) {
         }
         pointer.position.copy(e.point);
         pointer.position.y += 0.01;
-
+        pointer.time.value += 0.02;
     });
 
     var evt = { type: "teleport", position: new THREE.Vector3() };
@@ -97,6 +103,8 @@ export default function (renderer, scene, camera, assets) {
 
     assets["column_model"].scale(0.66, 0.66, 0.66);
     
+    assets["column_model"].computeBoundingBox();
+
     function addColumn(pos) {
         var mesh = new THREE.Mesh(assets["column_model"], new THREE.MeshStandardMaterial({
             metalness: 0,
@@ -109,6 +117,7 @@ export default function (renderer, scene, camera, assets) {
 
         mesh.addEventListener("interact/enter", function(e){
             mesh.material.color.setHex(0x999999);
+            scene.dispatchEvent({ type: "audio/tick" });
         });
         
         mesh.addEventListener("interact/leave", function(e){

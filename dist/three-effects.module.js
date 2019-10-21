@@ -133,9 +133,9 @@ function index (scene, config) {
         }
 
         void main() {
-            gl_FragColor = strength * ( lerpBloomFactor(1., 0.33) *  texture2D(blurTexture1, vUv) + \
-                                            lerpBloomFactor(0.33, 0.66) *  texture2D(blurTexture2, vUv) + \
-                                            lerpBloomFactor(0.33, 1.) *  texture2D(blurTexture3, vUv) );\
+            gl_FragColor = strength * ( lerpBloomFactor(1., 0.1) *  texture2D(blurTexture1, vUv) + \
+                                            lerpBloomFactor(0.25, 0.75) *  texture2D(blurTexture2, vUv) + \
+                                            lerpBloomFactor(0.1, 1.) *  texture2D(blurTexture3, vUv) );\
         }
     `, postUniforms);
 

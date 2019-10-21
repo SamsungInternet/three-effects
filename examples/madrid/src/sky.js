@@ -37,6 +37,8 @@ export default function (renderer, scene, camera, assets) {
 	
 	var a = 1;
 	
+	scene.fog = new THREE.FogExp2( 0xFFFFFF,0.0066);
+
 	var fn = function () {
 		hemi.intensity = 0.1 + a;
 		light.intensity = 0.1 +  a;
@@ -45,7 +47,8 @@ export default function (renderer, scene, camera, assets) {
 		light.color.set(0xFFFFFF);
 		light.color.lerp(col, Math.pow(1 - a, 10) );
 
-		scene.userData["bloom_strength"].value = 0.33 + 0.33 * a;
+		scene.fog.color.copy(light.color).multiplyScalar(0.33);
+		scene.userData["bloom_strength"].value = 0.1 + 0.1 * a;
 	};
 
 	window.setTimeout(fn,0);

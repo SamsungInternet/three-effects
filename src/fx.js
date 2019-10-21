@@ -102,9 +102,12 @@ export default function (scene, antialias) {
         renderer.vr.enabled = vrEnabled;
     };
 
+    var fxPattern = /FX_PASS_[0-9]+/gm;
+    var symPattern = /^\w+$/;
+    var uPattern = /^\s*uniform\s+/;
+
     function parsePasses( src ) {
-        var pattern = /FX_PASS_[0-9]+/gm;
-        var arr = src.match(pattern);
+        var arr = src.match(fxPattern);
         if(!arr) return ["main"];
         var set = new Set(arr);
         arr = [...set];
@@ -133,24 +136,39 @@ export default function (scene, antialias) {
             if(bc) body.push(`#if defined FX_PASS_${c}`);
             
             src.forEach(function (s, i) {
+                
                 if(bc && i && s[0] === "!") {
                     body.push(c < bc - 1 ? `#elif defined FX_PASS_${++c}` : "#else");    
                 }
-                s = s.replace("!", "");
-                head.push(`#include <${s}_pars>`);
-                body.push(`\t${s}_apply(fragColor, vUv);`)
+                
+                s = s.replace("!", "").trim();
+
+                if(!s) return;
+
+                if(s[0] = "#") {
+                    head.push(`#include <${s.replace("#", "")}>`);
+                } else if(s.match(symPattern)) {    
+                    head.push(`#include <${s}_pars>`);
+                    body.push(`\t${s}_apply(color, uv);`)
+                } else if(s.match(uPattern)){
+                    head.push(s);
+                } else {
+                    body.push(s);
+                }
+
             });
             
-            body.push("fragColor.a = 1.0;")
+            //body.push("fragColor.a = 1.0;")
             if(bc) body.push("#endif");
 
             src = [
                 head.join("\n"),
                 "",
                 "void main(void){",
-                "\tvec4 fragColor = texture2D(colorTexture, vUv);",
+                "\tvec2 uv = vUv;",
+                "\tvec4 color = texture2D(colorTexture, uv);",
                 body.join("\n"),
-                "\tgl_FragColor = fragColor;",
+                "\tgl_FragColor = color;",
                 "}"
             ].join("\n")
         }

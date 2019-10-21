@@ -6,8 +6,7 @@ import initStatues from "./statues.js";
 import attachInteract from "./interact.js";
 
 export default function (renderer, scene, camera, assets) {
-    //attachRaycast(renderer, scene);
-    //renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.autoUpdate = false;
     renderer.shadowMap.needsUpdate = true;
@@ -54,7 +53,7 @@ export default function (renderer, scene, camera, assets) {
 
     attach.filmgrain(scene);
 
-    attachInteract(scene);
+    attachInteract(scene, {debug: true});
 
     function setupFX() {
         var arr = [];

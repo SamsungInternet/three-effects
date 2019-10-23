@@ -16,7 +16,7 @@ export default function (renderer, scene, camera, assets) {
     assets["venus_model"].scale(0.05,0.05,0.05);
     assets["venus_model"].computeBoundingBox();
 
-    var arr = ["bloom", "outline", "ssao", "filmgrain", "fxaa", "colors", "godrays", "!glitch"];
+    var arr = ["bloom", "outline", "ssao", "filmgrain", "!fxaa", "colors", "godrays", "!glitch"];
 
     arr.forEach(function(s, i){
         var m = new THREE.Mesh(assets["venus_model"], material.clone());
@@ -38,25 +38,32 @@ export default function (renderer, scene, camera, assets) {
         m.addEventListener("interact/enter",function () {
             m.material.emissive.set(0x111111);
             scene.dispatchEvent({ type: "audio/tick" });
+            m.userData.label.visible = true;
         });
 
         m.addEventListener("interact/leave",function () {
             m.material.emissive.set(0x000000);
+            m.userData.label.visible = false;
         });
 
         var ev = {type: "option", name: s, value: false};
        
         var isActive = false;
     
+        m.material.color.setHSL(i / arr.length, isActive ? 0.75 : 0.25, isActive ? 0.75 : 0.5);
+        
         m.addEventListener("interact/press",function () {
             isActive = !isActive;
             m.material.color.setHSL(i / arr.length, isActive ? 0.75 : 0.25, isActive ? 0.75 : 0.5);
             ev.value = isActive;
             scene.dispatchEvent(ev);
             scene.dispatchEvent({ type: "audio/zit" });
+            m.userData.label.text = s.replace("!", "") + (isActive ? " on" : " off");
         });
 
         scene.dispatchEvent(ev);
+
+        scene.dispatchEvent({ type: "label/register", visible: false, entity: m, text: s.replace("!", "") + " off", scale: 0.33});
     })
     
     group.position.y = -0.01;

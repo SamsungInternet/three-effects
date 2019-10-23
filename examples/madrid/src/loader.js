@@ -1,6 +1,6 @@
 import { THREE } from "../../../dist/three-effects.js";
 import { OBJLoader } from "./loader/OBJLoader.js";
-import { BasisTextureLoader } from "./loader/BasisTextureLoader.js";
+//import { BasisTextureLoader } from "./loader/BasisTextureLoader.js";
 
 var basis_path = './src/loader/';
 

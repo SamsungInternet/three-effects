@@ -4,6 +4,7 @@ import initGround from "./ground.js";
 import initSky from "./sky.js";
 import initStatues from "./statues.js";
 import attachInteract from "./interact.js";
+import attachLabel from "./label.js";
 
 export default function (renderer, scene, camera, assets) {
     
@@ -43,10 +44,10 @@ export default function (renderer, scene, camera, assets) {
     var allFX = {
     //    ssao: true,
     //    outline: false,
-        bloom: true,
     //    godrays: true,
     //    colors: false,
-    //    "!fxaa": true,
+        "!fxaa": false,
+        bloom: true,
         filmgrain: false,
         "!glitch": false,
     }
@@ -64,6 +65,8 @@ export default function (renderer, scene, camera, assets) {
     attach.filmgrain(scene);
 
     attachInteract(scene, {debug: true});
+
+    attachLabel(scene, assets);
 
     function setupFX() {
         var arr = [];

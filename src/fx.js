@@ -34,7 +34,7 @@ export default function (scene, antialias) {
 
     scene.userData.resolution = { value: vsize };
 
-    var event = { type: "beforeRender", scene: null, renderer: null, camera: null, size: vsize };
+    var event = { type: "beforeRender", scene: null, renderer: null, camera: null, size: vsize, time: 0 };
     
     function dispatch(type) {
         event.type = type;
@@ -43,6 +43,8 @@ export default function (scene, antialias) {
 
     scene.onBeforeRender = function (renderer, scene, camera, renderTarget) {
         if (!passes.length) return;
+
+        event.time = window.performance.now();
 
         if (renderTarget) {
             vsize.set(renderTarget.width, renderTarget.height);

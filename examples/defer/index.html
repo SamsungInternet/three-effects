@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js effects</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel="icon" type="image/png" href="//developer.samsung.com//sd2_common/img/favicon-32x32.png" sizes="32x32">
+		<style>
+			canvas {
+				position: fixed;
+				top: 0;
+				left:0;
+				width: 100vw;
+				height: 100vh;
+			}
+
+		</style>
+
+		
+
+	</head>
+	<body>
+		<canvas></canvas>
+	   <script type="module">
+
+			import { THREE, attachEffects, attach } from "../../dist/three-effects.js";
+			import { WEBVR } from "../WebVR.js";
+
+		    var camera, scene, renderer, controls, fx;
+
+			init();
+			animate();
+
+			function init() {
+
+				var canvas = document.querySelector( 'canvas' );
+
+				
+				if(window.location.hash === "#multiview") {
+
+					var context = canvas.getContext( 'webgl2', { antialias: false, xrCompatible: true } );
+
+					renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
+
+				} else {
+				
+					renderer = new THREE.WebGLRenderer( { canvas: canvas } );
+
+				}
+
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				renderer.vr.enabled = true;
+				//
+
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 50 );
+				camera.position.z = 4;
+
+				
+				// Our scene
+				scene = new THREE.Scene();
+				setupScene();
+
+				onWindowResize();
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				setupEffects();
+
+				document.body.appendChild( WEBVR.createButton( renderer ) );
+				
+			}
+
+			var clickCount = 1;
+
+			function getEffectShader () {
+				clickCount++;
+				
+				/*
+				return `
+					void main(void) {
+						gl_FragColor = texture2D(colorTexture, vUv);//vec4(vUv, 0., 1.0);
+                    }
+                `;
+*/
+				return `
+					#include <bloom_pars>
+					
+					#define MODE_${clickCount % 3} 1
+					
+					uniform float time;
+					
+                    void main(void) {
+						vec4 col = texture2D(colorTexture, vUv);
+                        vec4 dep = texture2D(depthTexture, vUv);
+						float d = smoothstep(0.9, 1., dep.r);
+	
+						#if defined FX_PASS_0
+							#if defined MODE_1
+								gl_FragColor.rgb = col.rgb;
+							#elif defined MODE_2
+								gl_FragColor.rgb = vec3(d);
+							#else
+								gl_FragColor.rgb = mix(col.rgb, vec3(0.), abs(sin(time * d * 2.)));
+							#endif
+						#else
+							//col = vec4(0.);
+							#if defined MODE_2
+								col.rgb = vec3(d);
+							#else
+								bloom_apply(col, vUv);
+							#endif
+								
+							gl_FragColor = col;
+						#endif
+
+						gl_FragColor.a = 1.0;
+                    }
+                `;
+			}
+
+			function setupEffects() {
+				
+				fx = attachEffects(scene);
+
+				window.scene = scene;
+				// oneliners ftw
+				(attach.bloom(scene))({ strength: 1, radius: 1, threshold: 0.1 });
+
+                scene.userData.time = { value: 0 };
+                
+				// Shader for the final compositing
+				var fn = function () {
+					fx(getEffectShader());
+				};
+
+				renderer.domElement.addEventListener("click", fn);
+
+				renderer.vr.getController(0).addEventListener("selectstart", fn);
+
+				renderer.vr.getController(1).addEventListener("selectstart", fn);
+
+				fn();
+			}
+
+			
+
+			function setupScene() {
+
+				//var diffuse = new TextureLoader().load( 'textures/brick_diffuse.jpg' );
+				//diffuse.wrapS = diffuse.wrapT = RepeatWrapping;
+
+				// Setup some geometries
+				var geometry = new THREE.TorusKnotBufferGeometry( 1, 0.3, 128, 64 );
+				var material = new THREE.MeshBasicMaterial( { color: 'blue' } );
+
+				var count = 50;
+				var scale = 5;
+
+                var colors = [
+                    new THREE.Color(0x993300),
+                    new THREE.Color(0x993399),
+                    new THREE.Color(0x003399),
+                    new THREE.Color(0x333399),
+                    new THREE.Color(0x993366)
+                ];
+				for ( var i = 0; i < count; i ++ ) {
+
+					var r = Math.random() * 2.0 * Math.PI;
+					var z = ( Math.random() * 2.0 ) - 1.0;
+					var zScale = Math.sqrt( 1.0 - z * z ) * scale;
+
+                    var mtl = material.clone();
+
+                    mtl.color = colors[i % 5];
+
+                    var mesh = new THREE.Mesh( geometry, mtl );
+                    
+					mesh.position.set(
+						Math.cos( r ) * zScale,
+						Math.sin( r ) * zScale,
+						z * scale
+					);
+					mesh.rotation.set( Math.random(), Math.random(), Math.random() );
+					scene.add( mesh );
+
+				}
+
+			}
+
+			function onWindowResize() {
+
+				var aspect = window.innerWidth / window.innerHeight;
+				camera.aspect = aspect;
+				camera.updateProjectionMatrix();
+
+				var dpr = renderer.getPixelRatio();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function render () {
+				scene.userData.time.value = window.performance.now() / 1000;
+                
+                renderer.render( scene, camera );
+
+			}
+
+			function animate() {
+
+				renderer.setAnimationLoop( render );
+
+			}
+
+		</script>
+
+	</body>
+</html>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js effects</title>
+		<title>Click/trigger to cycle views</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<link rel="icon" type="image/png" href="//developer.samsung.com//sd2_common/img/favicon-32x32.png" sizes="32x32">
@@ -20,13 +20,13 @@
 
 	</head>
 	<body>
-		<canvas></canvas>
+		<canvas ></canvas>
 	   <script type="module">
 
 			import { THREE, attachEffects, attach } from "../../dist/three-effects.js";
 			import { WEBVR } from "../WebVR.js";
 
-		    var camera, scene, renderer, controls, fx;
+		    var camera, scene, renderer, fx;
 
 			init();
 			animate();
@@ -35,101 +35,83 @@
 
 				var canvas = document.querySelector( 'canvas' );
 
-				
-				if(window.location.hash === "#multiview") {
-
-					var context = canvas.getContext( 'webgl2', { antialias: false, xrCompatible: true } );
-
-					renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
-
-				} else {
-				
-					renderer = new THREE.WebGLRenderer( { canvas: canvas } );
-
-				}
+				renderer = new THREE.WebGLRenderer( { canvas: canvas } );
 
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 
 				renderer.vr.enabled = true;
-				//
 
-				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 50 );
-				camera.position.z = 4;
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 200 );
+				camera.position.z = 7;
 
 				
-				// Our scene
 				scene = new THREE.Scene();
 				setupScene();
 
 				onWindowResize();
 				window.addEventListener( 'resize', onWindowResize, false );
 
-				setupEffects();
-
+				
 				document.body.appendChild( WEBVR.createButton( renderer ) );
 				
+				setupEffects();
+
 			}
 
-			var clickCount = 1;
+			// Cycle through available views
+	
+			var clickCount = 0;
 
 			function getEffectShader () {
+				
 				clickCount++;
 				
-				/*
-				return `
-					void main(void) {
-						gl_FragColor = texture2D(colorTexture, vUv);//vec4(vUv, 0., 1.0);
-                    }
-                `;
-*/
-				return `
+				var head = `
 					#include <bloom_pars>
-					
-					#define MODE_${clickCount % 3} 1
-					
-					uniform float time;
-					
-                    void main(void) {
-						vec4 col = texture2D(colorTexture, vUv);
-                        vec4 dep = texture2D(depthTexture, vUv);
-						float d = smoothstep(0.9, 1., dep.r);
-	
-						#if defined FX_PASS_0
-							#if defined MODE_1
-								gl_FragColor.rgb = col.rgb;
-							#elif defined MODE_2
-								gl_FragColor.rgb = vec3(d);
-							#else
-								gl_FragColor.rgb = mix(col.rgb, vec3(0.), abs(sin(time * d * 2.)));
-							#endif
-						#else
-							//col = vec4(0.);
-							#if defined MODE_2
-								col.rgb = vec3(d);
-							#else
-								bloom_apply(col, vUv);
-							#endif
-								
-							gl_FragColor = col;
-						#endif
 
-						gl_FragColor.a = 1.0;
+					void main(void) {
+						vec4 color = texture2D(colorTexture, vUv);
+                        float depth = texture2D(depthTexture, vUv).r;
+				`;
+				
+				var body = [
+
+					``, // Do nothing just pass through the original color
+
+					`	color = texture2D(bloom_texture, vUv);`, // Blurred color texture
+
+					`	color += texture2D(bloom_texture, vUv);`, // Original + Blurred = glow
+
+					`	color.rgb = vec3(smoothstep(1., 0.97, depth));`, // Depth map, mind that the depth data are not in linear format
+
+					`	color.rgb = mix( texture2D(bloom_texture, vUv).rgb, color.rgb, vec3(smoothstep(0.99, 0.989, depth)) );` // Depth of field
+
+				];
+				
+				var foot =  `
+						gl_FragColor = vec4(color.rgb, 1.0);
                     }
-                `;
+				`;
+
+				var n = clickCount % body.length;
+				
+				// Same blur, different settings per effect
+				bloomControl({strength: 1, radius: n  < 3 ? 1 : 0, threshold: 0});
+					
+				return [head, body[n], foot].join("\n");
 			}
+
+			var bloomControl;
 
 			function setupEffects() {
 				
+				// Attach post proc to the scene
 				fx = attachEffects(scene);
 
-				window.scene = scene;
-				// oneliners ftw
-				(attach.bloom(scene))({ strength: 1, radius: 1, threshold: 0.1 });
+				// Attach bloom
+				bloomControl = attach.bloom(scene);
 
-                scene.userData.time = { value: 0 };
-                
-				// Shader for the final compositing
 				var fn = function () {
 					fx(getEffectShader());
 				};
@@ -147,43 +129,45 @@
 
 			function setupScene() {
 
-				//var diffuse = new TextureLoader().load( 'textures/brick_diffuse.jpg' );
-				//diffuse.wrapS = diffuse.wrapT = RepeatWrapping;
+				var light = new THREE.DirectionalLight(0xFFFFFF);
+				light.position.set(100, 100, 100);
+				scene.add(light);
 
-				// Setup some geometries
 				var geometry = new THREE.TorusKnotBufferGeometry( 1, 0.3, 128, 64 );
-				var material = new THREE.MeshBasicMaterial( { color: 'blue' } );
+				var material = new THREE.MeshStandardMaterial( {  } );
 
 				var count = 50;
-				var scale = 5;
-
+				
                 var colors = [
                     new THREE.Color(0x993300),
                     new THREE.Color(0x993399),
                     new THREE.Color(0x003399),
                     new THREE.Color(0x333399),
                     new THREE.Color(0x993366)
-                ];
+				];
+
 				for ( var i = 0; i < count; i ++ ) {
 
-					var r = Math.random() * 2.0 * Math.PI;
-					var z = ( Math.random() * 2.0 ) - 1.0;
-					var zScale = Math.sqrt( 1.0 - z * z ) * scale;
+					var Z = -i * 5;
+					
+					for ( var j = 0; j < i + 1; j++){
+						var r = Math.random() * 2.0 * Math.PI;
+						var z = ( Math.random() * 2.0 ) - 1.0;
+						
+						var mtl = material.clone();
 
-                    var mtl = material.clone();
+						mtl.color = colors[(i + j) % 5];
 
-                    mtl.color = colors[i % 5];
-
-                    var mesh = new THREE.Mesh( geometry, mtl );
-                    
-					mesh.position.set(
-						Math.cos( r ) * zScale,
-						Math.sin( r ) * zScale,
-						z * scale
-					);
-					mesh.rotation.set( Math.random(), Math.random(), Math.random() );
-					scene.add( mesh );
-
+						var mesh = new THREE.Mesh( geometry, mtl );
+						
+						mesh.position.set(
+							Math.cos( r ) * 3 * (i + j),
+							Math.sin( r ) * 3 * (i + j),
+							Z - z * 2
+						);
+						mesh.rotation.set( Math.random(), Math.random(), Math.random() );
+						scene.add( mesh );
+					}
 				}
 
 			}
@@ -200,9 +184,8 @@
 			}
 
 			function render () {
-				scene.userData.time.value = window.performance.now() / 1000;
-                
-                renderer.render( scene, camera );
+				
+				renderer.render( scene, camera );
 
 			}
 

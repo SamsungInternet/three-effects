@@ -3,7 +3,7 @@ import {THREE} from "../../../dist/three-effects.js";
 export default function (renderer, scene, camera, assets) {
     var group = new THREE.Group();
 
-    var material = new THREE.MeshPhysicalMaterial({
+    var material = new THREE.MeshStandardMaterial({
         metalness: 0,
         roughness: 1,
         aoMapIntensity: 0.33,

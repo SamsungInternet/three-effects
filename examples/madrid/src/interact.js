@@ -121,6 +121,8 @@ export default function (scene, config) {
 
             var t = window.performance.now();
 
+            event.time = t;
+
             (e.renderer.vr.isPresenting() ? hands : nohands).forEach(function (hand) {
                 var currentObject = hand.object;
                 var c = hand.controller;
@@ -160,6 +162,7 @@ export default function (scene, config) {
                     var obj = hit.object;
                     hit.hand = hand;
                     hand.hit = hit;
+                    hit.time = t;
 
                     hand.mesh.scale.z = hit.distance;
 

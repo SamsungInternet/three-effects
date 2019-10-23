@@ -17,13 +17,20 @@ export default function (renderer, scene, camera, assets) {
     scene.add(user);
     
     var targetPos = new THREE.Vector3();
+    var origPos = new THREE.Vector3();
+
+    var teleportTime = 0;
+
     scene.addEventListener("teleport", function(e) {
         scene.dispatchEvent({ type: "audio/woosh" });
+        origPos.copy(user.position);
         targetPos.copy(e.position);
+        teleportTime = window.performance.now();
     });
 
     scene.addEventListener("beforeRender", function(e) {
-        user.position.lerp(targetPos,0.05);
+        user.position.copy(origPos);
+        user.position.lerp( targetPos, 1 - Math.pow( 1 - Math.min(1, (e.time - teleportTime) / 666 ), 6) );
     });
 
 

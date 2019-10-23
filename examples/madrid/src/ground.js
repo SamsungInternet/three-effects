@@ -109,6 +109,8 @@ export default function (renderer, scene, camera, assets) {
         var mesh = new THREE.Mesh(assets["column_model"], new THREE.MeshStandardMaterial({
             metalness: 0,
             roughness:1,
+            aoMapIntensity: 0.33,
+            aoMap:  assets["column_material"],
             map: assets["column_diffuse"],
             normalMap: assets["column_normals"]
         }));

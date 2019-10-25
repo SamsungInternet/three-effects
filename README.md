@@ -1,22 +1,22 @@
 # three-effects
 
-A minimal framework for three.js development. It provides post processing and entity component systems
+A minimal framework for three.js development. It provides mechanisms to implement performant post processing and entity component systems
 
 ## Post Processing
 
-The library exposes the attachEffects function, which takes THREE.Scene objects as argument. and returns functions/closures tied to the provided scene object. 
+The library exposes the attachEffects function, which takes THREE.Scene objects as its argument and returns control functions tied to the provided scene object. 
 
-The scene.onBeforeRender and onAfterRender properties are tapped to swap render targets internally in renderer.render and perform post processing transparently.
+The scene.onBeforeRender and .onAfterRender callbacks are tapped to swap render targets internally in renderer.render and perform post processing transparently.
 
-The returned closures are used to set the final composition shader which will output to the screen/hmd or whatever render target was bound when renderer.render was called. 
+The control function is used to set the final composition shader which will output to the screen/hmd or whatever render target was bound when renderer.render was called. 
 
-The full fragment shader needs to be passed to the closure as a string argument. The scene.userData property is used as the uniforms container for the final step.
+The full fragment shader needs to be passed to the function as a string argument. The scene.userData property is used as the uniforms container for the final step.
 
 Some default uniforms are provided on initialization, colorTexture and depthTexture, to give access to the color and depth textures that are generated from the base rendering.
 
 ### Multi Pass Compositing
 
-Effects that need to access surrounding pixels, like FXAA or Glitch, will need to run on their own pass after all the pixels of the previous chain have been resolved.
+Effects that need to access surrounding pixels, like FXAA or Glitch, will need to run on a pass of their own after all the pixels of the previous chain have been resolved.
 
 To deal with this, some simple shader preprocessor logic to split the shader into multiple passes is provided using an uber shader approach with preprocessor defines.
 
@@ -43,7 +43,7 @@ Modules attach listeners for the event afterRender or afterPass, to perform thei
 
 All communication with the final step is handled via uniforms on the Scene.userData property. Effect modules can thus be entirely independent from the core mechanism.
 
-Still a convention is encouraged where modules are defined a functions that get the scene object as argument, and attach listeners to afterRender on the scene. 
+Still a convention is encouraged where modules are defined a functions that get the scene object as argument, and attach listeners to events on the scene. 
 
 These functions should return a control function that when run with no argument, remove the event listeners from the scene object and perform any cleanup needed. 
 
@@ -63,7 +63,7 @@ Passing arguments on the control functions can be used for effect state updates.
         function generateTexturesOnAfterRender (ev) {
             
             /* ev === { 
-                type: "afterRender" || "beforeRender" || "afterPass" || "beforePass" || "afterEffects", 
+                type: "afterRender" || "beforeRender" || "afterPass" || "beforePass" || "afterEffects",
                 renderer, 
                 scene,
                 camera, 
@@ -76,21 +76,23 @@ Passing arguments on the control functions can be used for effect state updates.
 
         function generateTexturesOnAfterPass (ev) {
             
-            // afterPass can be dispatched multiple times. Check when to actually perform the work based on event.passId
-            // For convenience, afterPass is also emmited right before the compositing starts with passId === undefined. 
+            // afterPass may be dispatched multiple times. You can set when to actually perform the work based on event.passId which will be "main" during the last pass. 
             if(ev.passId !== "FX_PASS_N") return;
 
             textureUniform.value = someGeneratedTexture;
 
         }
 
-        // Attach generateTextures on afterRender event to run it every frame after the scene is rendered(but before the final compositing step)
+        // Attach generateTextures on afterRender event to run it every frame after the scene is rendered(but before the final compositing step passes)
         scene.addEventListener("afterRender", generateTexturesAfterRender);
 
-        // Alternatively listen on afterPass to tap anywhere in the final compositing pipeline. You'll need to check the event.passId property.
+        // Alternatively listen on beforePass/afterPass to tap anywhere in the final compositing pipeline. You'll need to check the event.passId property.
         scene.addEventListener("afterPass", generateTexturesAfterPass);
         
-        // Return a function to control the instance and perform cleanup if/when needed
+        // afterEffects is emmited once all the passes are completed and the original renderTarget set and drawn. Texts/hud should be drawn here directly.
+        scene.addEventListener("afterEffects", generateTexturesAfterRender);
+        
+        // Return an control function to control the effect instance and perform cleanup if/when needed
         return function (args) {
             if(!args) {
                 delete scene.userData["effect_texture"];
@@ -127,6 +129,30 @@ Passing arguments on the control functions can be used for effect state updates.
             gl_FragColor = base_color + effect_color;
         }
     `);
+
+    
+    // We don't need to do anything special with the renderer. Just render the enhanced scene and the output will be post processed
+    renderer.render(scene, camera);
+
+    // Passing null will disable post processing for the associated scene
+    fx(null);
+
+    // This is just a convention but having effects return a control function to configure/cleanup effects is recommended 
+    controlFunction(null);
+```
+## Builtin Effects
+
+The library exposes some builtin effects throught an "attach" map of functions using the format described above. Currently bloom, filmgrain, fxaa, glitch are provided
+
+```
+    
+    import {attachEffects, attach} from "three-effects"
+
+    var fx = attachEffects(scene);
+
+    var bloomControl = attach.bloom(scene);
+
+    bloomControl({ strength: 0.5, radius: 1, threshold: 0.5 });
 
 ```
 

@@ -38,7 +38,7 @@ var Sky = function () {
 		side: BackSide
 	} );
 
-	Mesh.call( this, new BoxBufferGeometry( 400, 400, 400 ), material );
+	Mesh.call( this, new BoxBufferGeometry( 1000, 1000, 1000 ), material );
 
 };
 

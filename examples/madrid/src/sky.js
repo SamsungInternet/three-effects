@@ -15,12 +15,16 @@ export default function (renderer, scene, camera, assets) {
 	
 	group.add(light);
 
-	light.shadow.mapSize.width = 1024;  // default
-	light.shadow.mapSize.height = 1024; // default
+	light.shadow.mapSize.width = 2048;  // default
+	light.shadow.mapSize.height = 2048; // default
 	light.shadow.camera.near = 1;    // default
-	light.shadow.camera.far = 200;     // default
+	light.shadow.camera.far = 1000;     // default
+	light.shadow.camera.left = -50;     // default
+	light.shadow.camera.right = 50;     // default
+	light.shadow.camera.top = 50;     // default
+	light.shadow.camera.bottom = -50;     // default
 	light.shadow.bias = 0.001;
-	light.shadow.radius = 4;
+	light.shadow.radius = 1.2;
 
 	var hemi = new THREE.HemisphereLight(new THREE.Color(0x888899), new THREE.Color(0x776666), 1);
 
@@ -61,7 +65,7 @@ export default function (renderer, scene, camera, assets) {
 		if(!e.hand.pressed) return;
 		var vec = e.hand.raycaster.ray.direction;
 		if(vec.y < 0) return;
-		light.position.copy(vec).multiplyScalar(100);
+		light.position.copy(vec).multiplyScalar(900);
 		a = vec.y;
 		
 		fn();

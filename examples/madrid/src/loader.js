@@ -4,7 +4,7 @@ import { OBJLoader } from "./loader/OBJLoader.js";
 
 var basis_path = './src/loader/';
 
-export default function(files, progressCb) {
+export default function(renderer, files, progressCb) {
     var handlers = {
         "jpg": THREE.TextureLoader,
         "jpeg": THREE.TextureLoader,
@@ -55,6 +55,8 @@ export default function(files, progressCb) {
             console.warn( 'LOAD EXTENSION UNHANDLED: ' + url );
         }
     }
+
+    wp.push(document.fonts.ready);
 
     return Promise.all(wp).then(function () { return assets; });
 }

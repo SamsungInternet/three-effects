@@ -53,10 +53,10 @@ export default function (renderer, scene, camera, assets) {
     }
 
     attach.bloom(scene, { strength: 0.33, radius: 1, threshold: 0.66 });
-    attach.glitch(scene);
+    attach.glitch(scene, { snow: 0  });
 
     scene.userData.glitch_intensity.value = 0.8;
-
+    window.scene = scene;
     scene.userData.bloom_internal.prePass.onBeforeCompile = function (shader) {
         shader.fragmentShader = shader.fragmentShader.replace("gl_FragColor", "alpha *= smoothstep(1., 0.999, texture2D(depthTexture, vUv).r);\ngl_FragColor");
         console.log(shader);

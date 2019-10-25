@@ -52,8 +52,8 @@ export default function (renderer, scene, camera, assets) {
         "!glitch": false,
     }
 
-    attach.bloom(scene, { strength: 0.33, radius: 1, threshold: 0.66 });
-    attach.glitch(scene, { snow: 0  });
+    attach.bloom(scene, { strength: 0.33, radius: 1, threshold: 0.6 });
+    attach.glitch(scene);
 
     scene.userData.glitch_intensity.value = 0.8;
     window.scene = scene;

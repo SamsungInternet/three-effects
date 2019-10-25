@@ -137,8 +137,10 @@ export default function (scene, config) {
                         euler.y += -mouse.x * 0.01;
                         euler.x += mouse.y * 0.01;
                         euler.x = Math.min(Math.PI * 0.49, Math.max(-Math.PI * 0.49, euler.x));
-                        e.camera.quaternion.setFromEuler(euler);
                     }
+                    
+                    e.camera.quaternion.setFromEuler(euler);
+                    
                     hand.raycaster.setFromCamera( mouse, e.camera );
                 } else {
                     c.getWorldPosition(r.origin);

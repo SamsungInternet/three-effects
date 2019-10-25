@@ -1,35 +1,89 @@
 import { attachSystem, THREE } from "../../../dist/three-effects.js";
 
-export default function (scene) {
+export default function (scene, config) {
+
+    config = config || {}
 
     var _scene = new THREE.Scene();
 
+    var lods = config.lods || [0, 10];
+
+    var template = config.template || function(d, lod) {
+        var w = lod ? 256 : 1024;
+        var h = lod ? 64 : 256;
+
+        var text = lod ?  d.text.toUpperCase() : d.text;
+        
+        var samsung = `
+        <svg version="1.1" id="Livello_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+            viewBox="0 0 4838 1606.3" style="enable-background:new 0 0 4838 1606.3;" xml:space="preserve">
+        <style type="text/css">
+            .st0{fill:#034EA2;}
+            .st1{fill:#FFFFFF;}
+        </style>
+        <g>
+            <g>
+                <g>
+                    <path class="st0" d="M4835,382.5c65.9,377.7-962.3,872.3-2296.8,1104.7C1203.9,1719.6,68.8,1601.7,3,1223.8
+                        C-62.8,846.1,965.7,351.6,2300,119.3C3634.4-113.3,4769.3,4.7,4835,382.5z"/>
+                </g>
+                
+            </g>
+        </g>
+        </svg>
+        `;
+        return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns='http://www.w3.org/2000/svg' xmlns:xlink="http://www.w3.org/1999/xlink">` +
+        (lod ? "" : `
+        <image xlink:href="data:image/svg+xml;utf8,${encodeURIComponent(samsung)}" x="0" y="0" height="256" width="1024"/> `) +
+        `<text text-rendering="optimizeLegibility" x="${w/2 + w/100}" y="${h/2 + h/100}" fill="black" alignment-baseline="middle" 
+        text-anchor="middle" transform = "rotate(${lod ? 0: -8} ${w/2} ${h/2})" font-size="${h * (0.6 - 0.02 * text.length)}px"  font-family="${d.font || 'monospace'}">${text}</text>
+
+        <text text-rendering="optimizeLegibility" x="${w/2}" y="${h/2}" fill="white" alignment-baseline="middle" 
+        text-anchor="middle" transform = "rotate(${lod ? 0 : -8} ${w/2} ${h/2})" font-size="${h * (0.6 - 0.02 * text.length)}px" font-family="${d.font || 'monospace'}">${text}</text>
+
+        </svg>`;
+    }
+
     attachSystem(scene, "label", {
         init: function (e, objects, name) {
-            var ret = {
-                image: new Image(),
-                visible: e.visible !== undefined ? e.visible : true,
-                text: e.text || "",
-                font: e.font || "verdana",
-                scale: e.scale || 1
-            };
+            var ret = Object.assign({}, e);
 
-           
-            ret.mesh = new THREE.Sprite(new THREE.SpriteMaterial( { 
-                map: new THREE.Texture(ret.image), 
-                color: 0xffffff,
-                transparent: true
-            } ));
-
-            ret.mesh.visible = ret.visible;
-
-            ret.mesh.material.map.minFilter = THREE.LinearFilter;
-
-            ret.mesh.material.map.image.onload = function () {
-                ret.mesh.material.map.needsUpdate = true;
-            };
+            if(!ret.visible) ret.visible = false;
             
-            _scene.add(ret.mesh);
+            ret[""] = new THREE.LOD();
+
+            lods.forEach(function (ds, i) {
+                var mesh = mesh = new THREE.Sprite(new THREE.SpriteMaterial( { 
+                    map: new THREE.Texture(new Image()), 
+                    color: 0xffffff,
+                    transparent: true
+                } ));
+                
+                mesh.visible = ret.visible;
+
+                mesh.material.map.minFilter = THREE.LinearFilter;
+
+                function isPow2(n) {
+                        return n && (n & (n - 1)) === 0;
+                }
+
+                mesh.material.map.image.onload = function () {
+                    mesh.material.map.needsUpdate = true;
+                    mesh.scale.set(this.naturalWidth / this.naturalHeight, 1, 1);
+                    if(isPow2(this.naturalWidth) && isPow2(this.naturalHeight)) {
+                        mesh.material.map.minFilter = THREE.LinearMipmapLinearFilter;
+                        console.log(this.naturalWidth, this.naturalHeight)
+                    } else {
+                        mesh.material.map.minFilter = THREE.LinearFilter;
+                    }
+                };
+
+                ret[""].addLevel(mesh, ds);
+            });
+            
+            _scene.add(ret[""]);
+
+            ret.needsUpdate = true;
 
             return ret;
         },
@@ -45,7 +99,14 @@ export default function (scene) {
             objects.forEach(function (obj) {
                 var d = obj.userData[name];
                 
-                if(d._text !== d.text || d._font !== d.font) draw(d);
+                if(d.needsUpdate) {
+                    d[""].levels.forEach(function(l, i){
+                        var o = l.object;
+                        o.material.map.image.src =   "data:image/svg+xml;utf8," + encodeURIComponent((d.template || template)(d, i));
+                        document.body.appendChild(o.material.map.image)
+                    });
+                    delete d.needsUpdate;
+                };
                 
                 project(obj, d);
             });
@@ -57,54 +118,24 @@ export default function (scene) {
         }
     });
 
-    function draw(d) {
-        var el = document.createElement("div");
-        el.innerHTML = `<svg width="0" height="0" viewBox="0 0 100 128" xmlns='http://www.w3.org/2000/svg'>
-        <text text-rendering="optimizeLegibility" x="110" y="15" fill="black" alignment-baseline="middle" 
-        text-anchor="middle" font-size="200px" font-family="${d.font}">${d.text}</text>
-            <text id="bounds" text-rendering="optimizeLegibility" x="100" y="5" fill="white" alignment-baseline="middle" 
-            text-anchor="middle" font-size="200px" font-family="${d.font}">${d.text}</text>
-            
-            </svg>`;
-
-        document.body.appendChild(el); 
-
-        var bbox = el.querySelector("#bounds").getBBox(); 
-        var svg = el.querySelector("svg");
-
-        var pad = 20;
-        svg.setAttribute("viewBox", [bbox.x - pad / 2 , bbox.y - pad / 2, bbox.width + pad,bbox.height + pad].join(" "));
-        svg.setAttribute("width", bbox.width + pad);
-        svg.setAttribute("height", bbox.height + pad);
-        
-        d.mesh.scale.set(bbox.width/bbox.height * d.scale, d.scale,1);
-
-        document.body.removeChild(el);
-
-        d.mesh.material.map.image.src = "data:image/svg+xml;utf8," + el.innerHTML;
-        
-        d._text = d.text;
-        d._font = d.font;
-    }
-
     var box = new THREE.Box3();
 
     function project(obj, d) {
+        var m = d[""];
         if(!d.visible || !obj.visible) {
-            d.mesh.visible = false;
+            m.visible = false;
             return;
         }
 
-        d.mesh.visible = true;
+        m.visible = true;
         
         if(!obj.geometry.boundingBox) obj.geometry.computeBoundingBox();
         
         box.copy(obj.geometry.boundingBox);
         box.applyMatrix4(obj.matrixWorld);
 
-        obj.getWorldPosition(d.mesh.position);
+        obj.getWorldPosition(d[""].position);
 
-        d.mesh.position.y = box.max.y + d.mesh.scale.y;
-
+        d[""].position.y = box.max.y + 1;
     }
 }

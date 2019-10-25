@@ -59,6 +59,7 @@ export default function (renderer, scene, camera, assets) {
             scene.dispatchEvent(ev);
             scene.dispatchEvent({ type: "audio/zit" });
             m.userData.label.text = s.replace("!", "") + (isActive ? " on" : " off");
+            m.userData.label.needsUpdate = true;
         });
 
         scene.dispatchEvent(ev);

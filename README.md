@@ -1,14 +1,14 @@
 # three-effects
 
-A minimal framework for three.js development. It provides mechanisms to implement performant post processing and entity component systems
+A minimal framework for three.js development. It eases the implemention of performant post processing and entity component systems
 
 ## Post Processing
 
 The library exposes the attachEffects function, which takes THREE.Scene objects as its argument and returns control functions tied to the provided scene object. 
 
-The scene.onBeforeRender and .onAfterRender callbacks are tapped to swap render targets internally in renderer.render and perform post processing transparently.
+Internally, attachEffects binds the scene.onBeforeRender and .onAfterRender callback handlers to swap render targets and perform post processing transparently.
 
-The control function is used to set the final composition shader which will output to the screen/hmd or whatever render target was bound when renderer.render was called. 
+The returned control function is used as the final composition shader which outputs to the screen/hmd or whatever render target was bound when renderer.render() was called. 
 
 The full fragment shader needs to be passed to the function as a string argument. The scene.userData property is used as the uniforms container for the final step.
 

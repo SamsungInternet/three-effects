@@ -31,7 +31,7 @@ export default function (renderer, scene, camera, assets) {
 
     scene.addEventListener("beforeRender", function(e) {
         user.position.copy(origPos);
-        user.position.lerp( targetPos, 1 - Math.pow( 1 - Math.min(1, (e.time - teleportTime) / 666 ), 6) );
+        user.position.lerp( targetPos, 1 - Math.pow( 1 - Math.min(1, (e.time - teleportTime) / 900 ), 6) );
     });
 
 
@@ -47,27 +47,27 @@ export default function (renderer, scene, camera, assets) {
     //    godrays: true,
     //    colors: false,
         "!fxaa": false,
-        bloom: true,
-        filmgrain: false,
+        bloom: false,
         "!glitch": false,
+        filmgrain: false
     }
 
-    attach.bloom(scene, { strength: 0.33, radius: 1, threshold: 0.6 });
-    attach.glitch(scene);
+    attach.bloom(scene, { strength: 0.33, radius: 1, threshold: 0.5 });
+    attach.glitch(scene, { snow:0.2 });
 
     scene.userData.glitch_intensity.value = 0.8;
     window.scene = scene;
     scene.userData.bloom_internal.prePass.onBeforeCompile = function (shader) {
         shader.fragmentShader = shader.fragmentShader.replace("gl_FragColor", "alpha *= smoothstep(1., 0.999, texture2D(depthTexture, vUv).r);\ngl_FragColor");
-        console.log(shader);
     }
 
     attach.filmgrain(scene);
 
+    attachLabel(scene, assets);
+    
     attachInteract(scene, {debug: true});
 
-    attachLabel(scene, assets);
-
+    
     function setupFX() {
         var arr = [];
         for(var k in allFX) {
@@ -78,9 +78,10 @@ export default function (renderer, scene, camera, assets) {
 
     setupFX();
 
-    scene.addEventListener("tick", function(e) {
-        //camera.rotation.y += 0.002;
-        scene.userData["filmgrain_time"].value = e.time;
+    //fx(null);
+
+    scene.addEventListener("beforeRender", function(e) {
+        scene.userData["filmgrain_time"].value = e.time / 1000;
     });
 
     scene.addEventListener("option", function(e) {
@@ -110,7 +111,14 @@ export default function (renderer, scene, camera, assets) {
             s.setBuffer(assets[name]);
             s.setVolume( 1.0 );
             scene.addEventListener("audio/" + name, function (){
-                s.play();
+                if(s.isPlaying) {
+                    var s2 = new THREE.Audio( listener );
+                    s2.setBuffer(assets[name]);
+                    s2.setVolume( 1.0 );
+                    s2.play();        
+                } else {
+                    s.play();
+                }
             });
         }
         

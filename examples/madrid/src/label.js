@@ -18,7 +18,7 @@ export default function (scene, config) {
         <svg version="1.1" id="Livello_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
             viewBox="0 0 4838 1606.3" style="enable-background:new 0 0 4838 1606.3;" xml:space="preserve">
         <style type="text/css">
-            .st0{fill:#034EA2;}
+            .st0{fill:${d.disabled ? "#666666" : "#034EA2"};}
             .st1{fill:#FFFFFF;}
         </style>
         <g>
@@ -33,12 +33,11 @@ export default function (scene, config) {
         </svg>
         `;
         return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns='http://www.w3.org/2000/svg' xmlns:xlink="http://www.w3.org/1999/xlink">` +
-        (lod ? "" : `
-        <image xlink:href="data:image/svg+xml;utf8,${encodeURIComponent(samsung)}" x="0" y="0" height="256" width="1024"/> `) +
-        `<text text-rendering="optimizeLegibility" x="${w/2 + w/100}" y="${h/2 + h/100}" fill="black" alignment-baseline="middle" 
+        (lod ? "" : `<image xlink:href="data:image/svg+xml;utf8,${encodeURIComponent(samsung)}" x="0" y="0" height="256" width="1024"/> `) +
+        `<text text-rendering="optimizeLegibility" x="${w/2 + w/100}" y="${h/1.8 + h/100}" fill="black" alignment-baseline="middle" 
         text-anchor="middle" transform = "rotate(${lod ? 0: -8} ${w/2} ${h/2})" font-size="${h * (0.6 - 0.02 * text.length)}px"  font-family="${d.font || 'monospace'}">${text}</text>
 
-        <text text-rendering="optimizeLegibility" x="${w/2}" y="${h/2}" fill="white" alignment-baseline="middle" 
+        <text text-rendering="optimizeLegibility" x="${w/2}" y="${h / 1.8 }" fill="white" alignment-baseline="middle" 
         text-anchor="middle" transform = "rotate(${lod ? 0 : -8} ${w/2} ${h/2})" font-size="${h * (0.6 - 0.02 * text.length)}px" font-family="${d.font || 'monospace'}">${text}</text>
 
         </svg>`;

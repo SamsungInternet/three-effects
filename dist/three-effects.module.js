@@ -133,9 +133,9 @@ function index (scene, config) {
         }
 
         void main() {
-            gl_FragColor = strength * ( lerpBloomFactor(1., 0.1) *  texture2D(blurTexture1, vUv) + \
-                                            lerpBloomFactor(0.25, 0.75) *  texture2D(blurTexture2, vUv) + \
-                                            lerpBloomFactor(0.1, 1.) *  texture2D(blurTexture3, vUv) );\
+            gl_FragColor = strength * ( lerpBloomFactor(1., 0.2) *  texture2D(blurTexture1, vUv) + \
+                                            lerpBloomFactor(0.2, 0.8) *  texture2D(blurTexture2, vUv) + \
+                                            lerpBloomFactor(0.2, 1.) *  texture2D(blurTexture3, vUv) );\
         }
     `, postUniforms);
 
@@ -336,7 +336,8 @@ function index$2 (scene, config) {
 
 ShaderChunk["glitch_pars"] = `
     uniform sampler2D glitch_tDisp;
-    uniform float glitch_amount;
+	uniform float glitch_amount;
+	uniform float glitch_snow;
     uniform float glitch_angle;
     uniform float glitch_seed;
     uniform float glitch_seed_x;
@@ -352,12 +353,13 @@ ShaderChunk["glitch_pars"] = `
 				
 	void glitch_apply(inout vec4 fragColor, vec2 uv) {
 			vec2 p = uv;
+			vec2 p2 = p;
             float xs = floor(gl_FragCoord.x / 0.5);
 			float ys = floor(gl_FragCoord.y / 0.5);
             
             //based on staffantans glitch shader for unity https://github.com/staffantan/unityglitch
-			vec4 normal = texture2D(glitch_tDisp, p * glitch_seed * glitch_seed);
-			if(p.y < glitch_distortion_x + glitch_col_s && p.y > glitch_distortion_x - glitch_col_s * glitch_seed) {
+			vec4 normal = texture2D(glitch_tDisp, p2 * glitch_seed * glitch_seed);
+			if(p2.y < glitch_distortion_x + glitch_col_s && p2.y > glitch_distortion_x - glitch_col_s * glitch_seed) {
 				if(glitch_seed_x>0.){
 					p.y = 1. - (p.y + glitch_distortion_y);
 				}
@@ -365,7 +367,7 @@ ShaderChunk["glitch_pars"] = `
 					p.y = glitch_distortion_y;
 				}
 			}
-			if(p.x < glitch_distortion_y + glitch_col_s && p.x > glitch_distortion_y - glitch_col_s * glitch_seed) {
+			if(p2.x < glitch_distortion_y + glitch_col_s && p2.x > glitch_distortion_y - glitch_col_s * glitch_seed) {
 				if( glitch_seed_y > 0.){
 					p.x = glitch_distortion_x;
 				}
@@ -385,19 +387,19 @@ ShaderChunk["glitch_pars"] = `
             
             //add noise
 			vec4 snow = 200.*glitch_amount*vec4(glitch_rand(vec2(xs * glitch_seed,ys * glitch_seed*50.))*0.2);
-			color = color + snow;
+			color = color + glitch_snow * snow;
 
 			fragColor = mix(fragColor, color, glitch_intensity);
 	}
 `;
 
-function index$3 (scene) {
+function index$3 (scene, config) {
     var curF = 0;
     var randX = 0;
 
     var generateTrigger = function() {
 
-		randX = Math$1.randInt( 100, 1000 );
+		randX = Math$1.randInt( 120, 240 );
 
 	};
 
@@ -423,7 +425,8 @@ function index$3 (scene) {
 	
 	var controlUniforms = {
         "tDisp":		{ type: "t", value: generateHeightmap( 64 ) },
-        "amount":		{ type: "f", value: 0.08 },
+		"amount":		{ type: "f", value: 0.08 },
+		"snow":		{ type: "f", value: 0.5 },
         "angle":		{ type: "f", value: 0.02 },
         "seed":			{ type: "f", value: 0.02 },
         "seed_x":		{ type: "f", value: 0.02 },//-1,1
@@ -460,8 +463,13 @@ function index$3 (scene) {
 		curF++;
     });
 
-    return function (arg) {
+    var fn = function (arg) {
         if(arg) {
+
+			for(var k in controlUniforms) {
+				if(arg[k] !== undefined && k in controlUniforms) controlUniforms[k].value = arg[k];
+			}
+
             curF = 0;
             generateTrigger();
         } else {
@@ -469,7 +477,11 @@ function index$3 (scene) {
                 delete scene.userData["glitch_" + k]; 
 			}
         }
-    }
+	};
+	
+	fn(config);
+
+	return fn;
 }
 
 
@@ -524,16 +536,21 @@ function fx (scene, antialias) {
     }
 
     scene.onBeforeRender = function (renderer, scene, camera, renderTarget) {
-        if (!passes.length) return;
 
         event.time = window.performance.now();
 
+        
         if (renderTarget) {
             vsize.set(renderTarget.width, renderTarget.height);
         } else {
             renderer.getDrawingBufferSize(vsize);
         }
 
+        if (!passes.length) {
+            dispatch("beforeRender");    
+            return;
+        }
+        
         if(vsize.x !== renderTargets[0].width || vsize.y !== renderTargets[0].height) {
             renderTargets[0].setSize(vsize.x, vsize.y);
             renderTargets[1].setSize(vsize.x, vsize.y);
@@ -548,9 +565,12 @@ function fx (scene, antialias) {
         event.camera = camera;
         realTarget = event.outputTarget = renderTarget;
         event.renderTarget = renderTargets[0];
-        dispatch("beforeRender");
-
+        
+            
+        dispatch("beforeRender");    
+        
         renderer.setRenderTarget(antialias && renderer.capabilities.isWebGL2 ? multiTarget : renderTargets[0]);
+        
     };
 
     scene.onAfterRender = function (renderer, scene, camera) {
@@ -583,6 +603,7 @@ function fx (scene, antialias) {
 
         delete event.passId;
         dispatch("afterEffects");
+
         renderer.vr.enabled = vrEnabled;
     };
 

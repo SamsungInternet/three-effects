@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js effects - Madrid</title>
+		<title>three-effects :: Madrid</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<link rel="icon" type="image/png" href="//developer.samsung.com/sd2_common/img/favicon-32x32.png" sizes="32x32">
@@ -68,25 +68,44 @@
 			import load from "./src/loader.js";
 			import initScene from "./src/index.js";
 			
+			var canvas = document.querySelector( 'canvas' );
+
+				
+			if(window.location.hash === "#multiview" || window.location.hash === "#antialias") {
+
+				var context = canvas.getContext( 'webgl2', { antialias: window.location.hash === "#antialias", xrCompatible: true } );
+
+				renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
+
+			} else {
+			
+				renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: false } );
+
+			}
+
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+
+			renderer.vr.enabled = true;
+
 			var camera, scene, renderer;
 
 			var progressEl = document.querySelector("#progress");
 			var loaderEl = document.querySelector("#loader");
 
-			load({
+			load(renderer, {
 				"venus_model": "./assets/venus/index.obj",
-				"venus_diffuse": "./assets/venus/diffuse.jpg",
+				"venus_diffuse": "./assets/venus/diffuse.basis",
+				"venus_material": "./assets/venus/arg.basis",
 				"venus_normals": "./assets/venus/normals.png",
-				"venus_material": "./assets/venus/arg.png",
-
-				"column_model": "./assets/column/index.obj",
-				"column_diffuse": "./assets/column/diffuse.jpg",
-				"column_normals": "./assets/column/normals.png",
-				"column_material": "./assets/column/arg.png",
 				
-				"ground_diffuse": "./assets/ground/diffuse.jpg",
-				"ground_normals": "./assets/ground/normals.png",
-				"ground_material": "./assets/ground/arg.png",
+				"column_model": "./assets/column/index.obj",
+				"column_diffuse": "./assets/column/diffuse.basis",
+				"column_normals": "./assets/column/normals.png",
+				
+				"ground_diffuse": "./assets/ground/diffuse.basis",
+				"ground_normals": "./assets/ground/normals.basis",
+				"ground_material": "./assets/ground/arg.basis",
 
 				"tick": "./assets/tick.wav",
 				"woosh": "./assets/woosh.wav",
@@ -99,50 +118,28 @@
 				
 				//console.log(Math.floor(pc * 100) + "%");
 			}).then(function(assets) {
+			
 				loaderEl.style.opacity = 0;
 				loaderEl.style.backgroundColor = "#FFFFFF00";
-				init(assets);
-			});
-			
-			function init(assets) {
-				var canvas = document.querySelector( 'canvas' );
-
 				
-				if(window.location.hash === "#multiview" || window.location.hash === "#antialias") {
-
-					var context = canvas.getContext( 'webgl2', { antialias: window.location.hash === "#antialias", xrCompatible: true } );
-
-					renderer = new THREE.WebGLRenderer( { canvas: canvas, context: context } );
-
-				} else {
 				
-					renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: false } );
-
-				}
-
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-				renderer.vr.enabled = true;
-				//
-
-				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 500 );
-				//camera.position.z = 4;
-
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 2000 );
+				
 				scene = new THREE.Scene();
 				
-
 				onWindowResize();
 				window.addEventListener( 'resize', onWindowResize, false );
-
+				
 				initScene(renderer, scene, camera, assets);
 
 				document.body.appendChild( WEBVR.createButton( renderer ) );
 				
-				animate();
-			}
+				renderer.setAnimationLoop( function () {
+				
+					renderer.render( scene, camera );
 
-			
+				});
+			});
 
 			function onWindowResize() {
 
@@ -152,21 +149,6 @@
 
 				var dpr = renderer.getPixelRatio();
 				renderer.setSize( window.innerWidth, window.innerHeight );
-
-			}
-
-			var tickEvent = { type: "tick", time: 0 };
-
-			function render () {
-				tickEvent.time = window.performance.now() / 1000;
-				scene.dispatchEvent(tickEvent);
-				renderer.render( scene, camera );
-
-			}
-
-			function animate() {
-
-				renderer.setAnimationLoop( render );
 
 			}
 

@@ -42,16 +42,21 @@ export default function (scene, antialias) {
     }
 
     scene.onBeforeRender = function (renderer, scene, camera, renderTarget) {
-        if (!passes.length) return;
 
         event.time = window.performance.now();
 
+        
         if (renderTarget) {
             vsize.set(renderTarget.width, renderTarget.height);
         } else {
             renderer.getDrawingBufferSize(vsize);
         }
 
+        if (!passes.length) {
+            dispatch("beforeRender");    
+            return;
+        }
+        
         if(vsize.x !== renderTargets[0].width || vsize.y !== renderTargets[0].height) {
             renderTargets[0].setSize(vsize.x, vsize.y);
             renderTargets[1].setSize(vsize.x, vsize.y);
@@ -66,9 +71,12 @@ export default function (scene, antialias) {
         event.camera = camera;
         realTarget = event.outputTarget = renderTarget;
         event.renderTarget = renderTargets[0];
-        dispatch("beforeRender");
-
+        
+            
+        dispatch("beforeRender");    
+        
         renderer.setRenderTarget(antialias && renderer.capabilities.isWebGL2 ? multiTarget : renderTargets[0]);
+        
     };
 
     scene.onAfterRender = function (renderer, scene, camera) {
@@ -101,6 +109,7 @@ export default function (scene, antialias) {
 
         delete event.passId;
         dispatch("afterEffects");
+
         renderer.vr.enabled = vrEnabled;
     };
 

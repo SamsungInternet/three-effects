@@ -6,7 +6,7 @@ export default function (renderer, scene, camera, assets) {
     var material = new THREE.MeshStandardMaterial({
         metalness: 0,
         roughness: 1,
-        aoMapIntensity: 0.33,
+        aoMapIntensity: 0.5,
         map: assets["venus_diffuse"],
         aoMap: assets["venus_material"],
         roughnessMap: assets["venus_material"],
@@ -23,7 +23,7 @@ export default function (renderer, scene, camera, assets) {
         m.castShadow = true;
         m.receiveShadow = true;
         
-        m.material.color.setHSL(i/arr.length, 0.8, 0.66);
+        m.material.color.setHSL(i/arr.length, 0.2, 0.7);
 
         var a = Math.PI * 2 * (i / arr.length);
         m.position.set(Math.sin(a) * 5, 0, Math.cos(a) * 5);
@@ -50,21 +50,22 @@ export default function (renderer, scene, camera, assets) {
        
         var isActive = false;
     
-        m.material.color.setHSL(i / arr.length, isActive ? 0.75 : 0.25, isActive ? 0.75 : 0.5);
-        
+        m.material.color.setHSL(i / arr.length, isActive ? 0.8 : 0.2, isActive ? 0.8 : 0.7);
+            
         m.addEventListener("interact/press",function () {
             isActive = !isActive;
-            m.material.color.setHSL(i / arr.length, isActive ? 0.75 : 0.25, isActive ? 0.75 : 0.5);
+            m.material.color.setHSL(i / arr.length, isActive ? 0.8 : 0.2, isActive ? 0.8 : 0.7);
             ev.value = isActive;
             scene.dispatchEvent(ev);
             scene.dispatchEvent({ type: "audio/zit" });
             m.userData.label.text = s.replace("!", "") + (isActive ? " on" : " off");
+            m.userData.label.disabled = !isActive;
             m.userData.label.needsUpdate = true;
         });
 
         scene.dispatchEvent(ev);
 
-        scene.dispatchEvent({ type: "label/register", visible: false, entity: m, text: s.replace("!", "") + " off", scale: 0.33});
+        scene.dispatchEvent({ type: "label/register", visible: false, entity: m, text: s.replace("!", "") + " off", scale: 0.33, disabled: !isActive});
     })
     
     group.position.y = -0.01;

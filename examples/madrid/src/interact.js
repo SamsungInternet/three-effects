@@ -6,6 +6,7 @@ export default function (scene, config) {
     var holdDuration = config.holdDuration || 1000;
 
     var tubeGeometry = new THREE.CylinderBufferGeometry(0.01, 0.01, 1, 12, 1, true);
+    tubeGeometry.translate(0, 0.5, 0);
     tubeGeometry.rotateX(Math.PI / 2);
 
     function getHand(renderer, id) {
@@ -67,7 +68,7 @@ export default function (scene, config) {
        
     }
 
-    var vfrom = new THREE.Vector3(0, 0, -1);
+    var vfrom = new THREE.Vector3(0, 0, 1);
 
     var mouse = new THREE.Vector2();
 
@@ -147,8 +148,8 @@ export default function (scene, config) {
                     c.getWorldPosition(r.origin);
                     c.getWorldDirection(r.direction);
                     r.direction.negate();
-                    hand.raycaster.ray.origin.lerp(r.origin, 0.2);
-                    hand.raycaster.ray.direction.lerp(r.direction, 0.1);
+                    hand.raycaster.ray.origin.lerp(r.origin, 0.3);
+                    hand.raycaster.ray.direction.lerp(r.direction, 0.2);
                 }
                 
                 hand.mesh.quaternion.setFromUnitVectors( vfrom, hand.raycaster.ray.direction );
@@ -168,7 +169,7 @@ export default function (scene, config) {
                     hand.hit = hit;
                     hit.time = t;
 
-                    hand.mesh.scale.y = hit.distance;
+                    hand.mesh.scale.z = hit.distance;
 
                     if(obj !== currentObject){
                         dispatch(obj, hit, "interact/enter");
@@ -198,9 +199,9 @@ export default function (scene, config) {
 
                 hand.object = currentObject;
 
-                if(hand.mesh.material) hand.mesh.material.opacity = (hand.hold ? 0 : 0.1) + (currentObject && currentObject.userData.interact.important ? 0.2 : 0.1);
+                if(hand.mesh.material) hand.mesh.material.opacity = (hand.hold ? 0.1 : 0) + (currentObject && currentObject.userData.interact.important ? 0.2 : 0.1);
 
-                hand.mesh.visible = false;
+                //hand.mesh.visible = false;
             })
         }
     })

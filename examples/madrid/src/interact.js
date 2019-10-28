@@ -146,7 +146,7 @@ export default function (scene, config) {
                 } else {
                     c.getWorldPosition(r.origin);
                     c.getWorldDirection(r.direction);
-                    r.negate();
+                    r.direction.negate();
                     hand.raycaster.ray.origin.lerp(r.origin, 0.2);
                     hand.raycaster.ray.direction.lerp(r.direction, 0.1);
                 }

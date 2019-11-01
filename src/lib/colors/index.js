@@ -60,7 +60,10 @@ THREE.ShaderChunk.colors = `
 
 export default function (scene) {
     var controlUniform = {value: null};
-    scene.userData["bloom_texture"] = controlUniform;
+    scene.userData["colors_texture"] = controlUniform;
+    scene.userData.colors = {
+        texture: controlUniform
+    }
 
     return function(arg) {
         if(arg) {

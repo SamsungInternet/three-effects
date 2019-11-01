@@ -107,6 +107,8 @@ export default function (scene, config) {
         scene.userData["glitch_" + k] = controlUniforms[k];
     }
 
+	scene.glitch = controlUniforms;
+
     scene.addEventListener("beforeRender", function () {
         controlUniforms[ 'seed' ].value = Math.random();//default seeding	
 		if ( curF % randX == 0) {

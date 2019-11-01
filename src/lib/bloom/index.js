@@ -138,6 +138,7 @@ export default function (scene, config) {
     `, postUniforms);
 
     scene.userData.bloom_internal = {prePass, blurPasses, postPass};
+    scene.userData.bloom = controlUniforms;
 
     var _scene = new THREE.Scene();
     var _ortho = new THREE.OrthographicCamera(1,1,1,1,1,10);

@@ -41,6 +41,8 @@ export default function (scene, config) {
     scene.userData["filmgrain_sIntensity"] = controlUniforms["sIntensity"];
     scene.userData["filmgrain_nIntensity"] = controlUniforms["nIntensity"];
     
+    scene.userData.filmgrain = controlUniforms;
+
     return function (arg) {
         if(arg) {
             handleConf(arg);
@@ -50,6 +52,7 @@ export default function (scene, config) {
         delete scene.userData["filmgrain_sCount"];
         delete scene.userData["filmgrain_sIntensity"];
         delete scene.userData["filmgrain_nIntensity"];
+        delete scene.userData.filmgrain;
     }
 
 }

@@ -7,13 +7,11 @@ export default function (renderer, scene, camera, assets) {
     var group = new THREE.Group();
 
     var material = new THREE.MeshStandardMaterial({
-        //metalness: 1,
         roughness: 1,
-        aoMapIntensity: 1,
+        aoMapIntensity: 2,
         aoMap: assets["ground_material"],
         map: assets["ground_diffuse"],
         roughnessMap: assets["ground_material"],
-        //metalnessMap: assets["ground_material"],
         normalMap: assets["ground_normals"]
     });
 
@@ -25,7 +23,6 @@ export default function (renderer, scene, camera, assets) {
         material[k].repeat.set(333, 333);
     });
     
-    console.log(material)
     var mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(1000,1000), material);
 
     mesh.receiveShadow = true;
@@ -108,13 +105,14 @@ export default function (renderer, scene, camera, assets) {
     function addColumn(pos) {
         var mesh = new THREE.Mesh(assets["column_model"], new THREE.MeshStandardMaterial({
             metalness: 0,
-            roughness:1,
-            aoMapIntensity: 0.33,
-            aoMap:  assets["column_material"],
+            roughness:0.66,
+            aoMap:  assets["column_diffuse"],
             map: assets["column_diffuse"],
+            roughnessMap: assets["column_diffuse"],
             normalMap: assets["column_normals"]
         }));
 
+        
         scene.dispatchEvent({ type: "interact/register", entity: mesh });
 
         mesh.addEventListener("interact/enter", function(e){
@@ -123,7 +121,7 @@ export default function (renderer, scene, camera, assets) {
         });
         
         mesh.addEventListener("interact/leave", function(e){
-            mesh.material.color.setHex(0xCCCCCC);
+            mesh.material.color.setHex(0xFFFFFF);
         });
 
         mesh.addEventListener("interact/release", function(e){

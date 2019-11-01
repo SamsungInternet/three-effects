@@ -5,6 +5,10 @@ export default function (scene, config) {
 
     var holdDuration = config.holdDuration || 1000;
 
+    var tubeGeometry = new THREE.CylinderBufferGeometry(0.01, 0.01, 1, 12, 1, true);
+    tubeGeometry.translate(0, 0.5, 0);
+    tubeGeometry.rotateX(Math.PI / 2);
+
     function getHand(renderer, id) {
         var c = renderer ? renderer.vr.getController(id) : new THREE.Group();
         
@@ -16,7 +20,7 @@ export default function (scene, config) {
             pressTime: 0,
             pressed: false,
             object: null,
-            mesh: renderer ? new THREE.Mesh(new THREE.CylinderBufferGeometry(0.01, 0.01, 1, 6, 1, true), new THREE.MeshBasicMaterial({
+            mesh: renderer ? new THREE.Mesh(tubeGeometry, new THREE.MeshBasicMaterial({
                 color: 0xDDEEFF,
                 transparent: true,
                 depthTest: false,
@@ -29,7 +33,7 @@ export default function (scene, config) {
         ret.mesh.visible = false;
 
         if(ret.mesh.material) {
-            ret.mesh.material.opacity = 0.33;            
+            ret.mesh.material.opacity = 0.1;            
             scene.add(ret.mesh);
         }
 
@@ -138,15 +142,14 @@ export default function (scene, config) {
                         euler.x += mouse.y * 0.01;
                         euler.x = Math.min(Math.PI * 0.49, Math.max(-Math.PI * 0.49, euler.x));
                     }
-                    
                     e.camera.quaternion.setFromEuler(euler);
-                    
                     hand.raycaster.setFromCamera( mouse, e.camera );
                 } else {
                     c.getWorldPosition(r.origin);
                     c.getWorldDirection(r.direction);
-                    hand.raycaster.ray.origin.lerp(r.origin, 0.2);
-                    hand.raycaster.ray.direction.lerp(r.direction, 0.1);
+                    r.direction.negate();
+                    hand.raycaster.ray.origin.lerp(r.origin, 0.3);
+                    hand.raycaster.ray.direction.lerp(r.direction, 0.2);
                 }
                 
                 hand.mesh.quaternion.setFromUnitVectors( vfrom, hand.raycaster.ray.direction );
@@ -195,6 +198,10 @@ export default function (scene, config) {
                 }
 
                 hand.object = currentObject;
+
+                if(hand.mesh.material) hand.mesh.material.opacity = (hand.hold ? 0.1 : 0) + (currentObject && currentObject.userData.interact.important ? 0.2 : 0.1);
+
+                //hand.mesh.visible = false;
             })
         }
     })

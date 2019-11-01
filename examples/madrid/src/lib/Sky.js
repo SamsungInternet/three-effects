@@ -112,7 +112,7 @@ Sky.SkyShader = {
 		'	gl_Position.z = gl_Position.w;', // set z to camera.far
 
 		'	vSunDirection = normalize( sunPosition );',
-		//'	vSunDirection.z *= -1.;',
+		'	vSunDirection.x *= -1.;',
 		'	vSunE = sunIntensity( dot( vSunDirection, up ) );',
 
 		'	vSunfade = 1.0 - clamp( 1.0 - exp( ( vSunDirection.y / 450000.0 ) ), 0.0, 1.0 );',
@@ -216,12 +216,12 @@ Sky.SkyShader = {
 		'	vec3 L0 = vec3( 0.1 ) * Fex;',
 
 		// composition + solar disc
-		'	float sundisk = smoothstep( sunAngularDiameterCos, sunAngularDiameterCos + 0.00002, cosTheta );',
+		'	float sundisk = smoothstep( sunAngularDiameterCos, sunAngularDiameterCos + 0.005, cosTheta );',
 		'	L0 += ( vSunE * 19000.0 * Fex ) * sundisk;',
 
 		'	vec3 texColor = ( Lin + L0 ) * 0.04 + vec3( 0.0, 0.0003, 0.00075 );',
 
-		'	vec3 curr = Uncharted2Tonemap( ( log2( 2.0 / pow( luminance, 4.0 ) ) ) * texColor );',
+		'	vec3 curr = Uncharted2Tonemap( ( log2( 2.0 / pow( luminance, 8.0 ) ) ) * texColor );',
 		'	vec3 color = curr * whiteScale;',
 
 		'	vec3 retColor = pow( color, vec3( 1.0 / ( 1.2 + ( 1.2 * vSunfade ) ) ) );',

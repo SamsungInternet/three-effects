@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Post processing and entity component systems for Threejs",
   "main": "./dist/three-effects.js",
-  "module":"./dist/three-effects.module.js",
+  "module": "./dist/three-effects.module.js",
   "scripts": {
     "dist": "rollup -c"
   },

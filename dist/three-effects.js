@@ -23159,10 +23159,25 @@ function WebXRManager( renderer, gl ) {
 			session.addEventListener( 'selectstart', onSessionEvent );
 			session.addEventListener( 'selectend', onSessionEvent );
 			session.addEventListener( 'end', onSessionEnd );
+			
+			var attributes = gl.getContextAttributes();
+
+			var layerInit = {
+				antialias: attributes.antialias,
+				alpha: attributes.alpha,
+				depth: attributes.depth,
+				stencil: attributes.stencil,
+				framebufferScaleFactor: 1.0
+			};
 
 			// eslint-disable-next-line no-undef
-			session.updateRenderState( { baseLayer: new XRWebGLLayer( session, gl ) } );
+			var baseLayer = new XRWebGLLayer( session, gl, layerInit );
 
+			// baseLayer will only be applied to the session
+			// when the next XRFrame's callbacks are processed.
+			session.updateRenderState( { baseLayer: baseLayer } );
+			renderer.setDrawingBufferSize( baseLayer.framebufferWidth, baseLayer.framebufferHeight, 1 );
+			
 			session.requestReferenceSpace( referenceSpaceType ).then( onRequestReferenceSpace );
 
 			//
